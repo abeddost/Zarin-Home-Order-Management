@@ -1,0 +1,178 @@
+import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
+import { COMPANY_INFO } from '@/lib/constants'
+import type { Order } from '@/types'
+
+const S = StyleSheet.create({
+  page: { flexDirection: 'column', backgroundColor: '#FFFFFF', padding: 24, fontSize: 9, fontFamily: 'Helvetica' },
+  // Header
+  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  companyBlock: { flexDirection: 'column', gap: 2 },
+  companyName: { fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
+  companyDetail: { fontSize: 8, color: '#78716c' },
+  orderBlock: { flexDirection: 'column', alignItems: 'flex-end', gap: 2 },
+  orderNum: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
+  orderDate: { fontSize: 8, color: '#78716c' },
+  divider: { borderBottom: '1 solid #e7e5e4', marginBottom: 12 },
+  // Items grid
+  itemsSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  itemCard: { width: 170, flexDirection: 'column', borderRadius: 4, border: '1 solid #e7e5e4', overflow: 'hidden' },
+  itemImage: { width: 170, height: 110, backgroundColor: '#f5f5f4', objectFit: 'cover' },
+  itemBody: { padding: 8, flexDirection: 'column', gap: 3 },
+  itemModel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
+  itemRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
+  itemLabel: { fontSize: 7, color: '#a8a29e', fontFamily: 'Helvetica-Bold' },
+  itemValue: { fontSize: 8, color: '#44403c' },
+  // Footer
+  footer: { flexDirection: 'row', gap: 12, marginTop: 'auto' },
+  footerCard: { flex: 1, padding: 10, backgroundColor: '#fafaf9', borderRadius: 4, border: '1 solid #e7e5e4', flexDirection: 'column', gap: 4 },
+  footerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#1c1917', marginBottom: 2 },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  footerLabel: { fontSize: 8, color: '#78716c' },
+  footerValue: { fontSize: 8, color: '#1c1917', fontFamily: 'Helvetica-Bold' },
+  footerText: { fontSize: 8, color: '#44403c' },
+})
+
+function fmt(n: number) {
+  return '€ ' + n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function fmtDate(s: string | null | undefined) {
+  if (!s) return '—'
+  const d = new Date(s)
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+export function OrderPDF({ order, trueRemaining }: { order: Order; trueRemaining?: number }) {
+  const items = order.order_items ?? []
+  const customer = order.customer
+
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={S.page}>
+
+        {/* HEADER */}
+        <View style={S.header}>
+          <View style={S.companyBlock}>
+            <Text style={S.companyName}>{COMPANY_INFO.name}</Text>
+            <Text style={S.companyDetail}>{COMPANY_INFO.address}, {COMPANY_INFO.city}</Text>
+            <Text style={S.companyDetail}>{COMPANY_INFO.phone}</Text>
+          </View>
+          <View style={S.orderBlock}>
+            <Text style={S.orderNum}>Bestellung / Order #{order.order_number}</Text>
+            <Text style={S.orderDate}>Datum / Date: {fmtDate(order.order_date)}</Text>
+          </View>
+        </View>
+
+        <View style={S.divider} />
+
+        {/* ITEMS */}
+        <View style={S.itemsSection}>
+          {items.map((item, i) => (
+            <View key={i} style={S.itemCard}>
+              {item.image_url ? (
+                <Image src={item.image_url} style={S.itemImage} />
+              ) : (
+                <View style={[S.itemImage, { alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={{ color: '#a8a29e', fontSize: 8 }}>No Image</Text>
+                </View>
+              )}
+              <View style={S.itemBody}>
+                <Text style={S.itemModel}>{item.model_name}</Text>
+                <Text style={{ fontSize: 7, color: '#78716c' }}>{item.category}</Text>
+                {item.sofa_configuration ? (
+                  <View style={S.itemRow}>
+                    <Text style={S.itemLabel}>Sitz / Config:</Text>
+                    <Text style={S.itemValue}>{item.sofa_configuration}</Text>
+                  </View>
+                ) : null}
+                {item.color ? (
+                  <View style={S.itemRow}>
+                    <Text style={S.itemLabel}>Farbe / Color:</Text>
+                    <Text style={S.itemValue}>{item.color}</Text>
+                  </View>
+                ) : null}
+                <View style={S.itemRow}>
+                  <Text style={S.itemLabel}>Menge / Qty:</Text>
+                  <Text style={S.itemValue}>{item.quantity}</Text>
+                  <Text style={[S.itemLabel, { marginLeft: 8 }]}>Preis:</Text>
+                  <Text style={S.itemValue}>{fmt(item.unit_price)}</Text>
+                </View>
+                {item.customization_note ? (
+                  <View style={{ backgroundColor: '#fef3c7', borderRadius: 3, padding: 4, marginTop: 2 }}>
+                    <Text style={{ fontSize: 7, color: '#92400e', fontFamily: 'Helvetica-Bold' }}>Notiz / Note:</Text>
+                    <Text style={{ fontSize: 7, color: '#78350f' }}>{item.customization_note}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={S.divider} />
+
+        {/* FOOTER */}
+        <View style={S.footer}>
+          {/* Customer */}
+          <View style={S.footerCard}>
+            <Text style={S.footerTitle}>Kunde / Customer</Text>
+            {customer ? (
+              <>
+                <Text style={S.footerText}>{customer.name}</Text>
+                {customer.address ? <Text style={S.footerText}>{customer.address}</Text> : null}
+                {customer.city ? <Text style={S.footerText}>{customer.postal_code ?? ''} {customer.city}</Text> : null}
+                {customer.phone ? <Text style={S.footerText}>{customer.phone}</Text> : null}
+                {customer.email ? <Text style={S.footerText}>{customer.email}</Text> : null}
+              </>
+            ) : (
+              <Text style={S.footerText}>—</Text>
+            )}
+          </View>
+
+          {/* Payment */}
+          <View style={S.footerCard}>
+            <Text style={S.footerTitle}>Zahlung / Payment</Text>
+            <View style={S.footerRow}>
+              <Text style={S.footerLabel}>Gesamt / Total:</Text>
+              <Text style={S.footerValue}>{fmt(order.total_price)}</Text>
+            </View>
+            <View style={S.footerRow}>
+              <Text style={S.footerLabel}>Anzahlung / Down:</Text>
+              <Text style={S.footerValue}>{fmt(order.down_payment)}</Text>
+            </View>
+            <View style={S.footerRow}>
+              <Text style={S.footerLabel}>Restbetrag / Rest:</Text>
+              <Text style={S.footerValue}>{fmt(trueRemaining ?? order.remaining_balance)}</Text>
+            </View>
+            {order.payment_method ? (
+              <View style={S.footerRow}>
+                <Text style={S.footerLabel}>Methode:</Text>
+                <Text style={S.footerValue}>{order.payment_method}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Notes */}
+          <View style={S.footerCard}>
+            <Text style={S.footerTitle}>Notizen / Notes</Text>
+            {order.factory_notes ? (
+              <Text style={S.footerText}>{order.factory_notes}</Text>
+            ) : null}
+            {order.internal_notes ? (
+              <Text style={[S.footerText, { color: '#78716c', fontStyle: 'italic' }]}>{order.internal_notes}</Text>
+            ) : null}
+            {order.expected_delivery_date ? (
+              <Text style={S.footerText}>Lieferung / Delivery: {fmtDate(order.expected_delivery_date)}</Text>
+            ) : null}
+            {order.delivery_address ? (
+              <Text style={S.footerText}>{order.delivery_address}</Text>
+            ) : null}
+            {!order.factory_notes && !order.internal_notes && !order.expected_delivery_date ? (
+              <Text style={{ fontSize: 8, color: '#a8a29e' }}>—</Text>
+            ) : null}
+          </View>
+        </View>
+
+      </Page>
+    </Document>
+  )
+}
