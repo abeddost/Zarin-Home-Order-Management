@@ -1,11 +1,14 @@
 import { redirect } from 'next/navigation'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
+import { getUserAccess, homeForAccess } from '@/lib/access'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const access = getUserAccess(user)
+  if (access !== 'admin') redirect(homeForAccess(access))
 
   return (
     <div className="min-h-screen bg-gray-50">

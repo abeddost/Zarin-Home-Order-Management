@@ -21,8 +21,9 @@ export default function FactoryOrdersPage() {
       const supabase = getSupabaseBrowserClient()
       const { data } = await supabase
         .from('orders')
-        .select('*, customer:customers(name, phone)')
+        .select('id, order_number, order_date, order_status, factory_status, delivery_status, created_at, customer:customers(name, phone)')
         .order('created_at', { ascending: false })
+        .limit(200)
       setOrders((data as Order[]) ?? [])
       setLoading(false)
     }

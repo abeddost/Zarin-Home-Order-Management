@@ -37,6 +37,7 @@ export interface FormState {
   delivery_address: string
   internal_notes: string
   factory_notes: string
+  order_source: string
 }
 
 export const EMPTY_ITEM = (): OrderItemFormValues => ({
@@ -79,6 +80,7 @@ export function OrderForm({ customers, products, basePath = '/orders' }: Props) 
     delivery_address: '',
     internal_notes: '',
     factory_notes: '',
+    order_source: '',
   })
 
   useEffect(() => {
@@ -156,6 +158,7 @@ export function OrderForm({ customers, products, basePath = '/orders' }: Props) 
         delivery_address: form.delivery_address,
         internal_notes: form.internal_notes,
         factory_notes: form.factory_notes,
+        order_source: form.order_source,
       })
 
       if (result.error) { toast.error(result.error); return }

@@ -1,12 +1,10 @@
 'use server'
 
 import { createElement } from 'react'
-import { getSupabaseServerClient, getSupabaseServiceClient } from '@/lib/supabase/server'
-import { saveOrderPdfUrl } from '@/actions/orders'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PRODUCT_IMAGE_MAP } from '@/lib/productImages'
-import type { Order, OrderItem } from '@/types'
+import type { Order, OrderItem, Payment } from '@/types'
 
-// react-pdf does not support webp. Map to the jpg version if available.
 function pdfSafeImageUrl(item: OrderItem): string | null {
   const url = item.image_url
   if (!url) return null
@@ -15,7 +13,7 @@ function pdfSafeImageUrl(item: OrderItem): string | null {
   return mapped && !mapped.toLowerCase().endsWith('.webp') ? mapped : null
 }
 
-export async function generateAndUploadPDF(orderId: string): Promise<{ url?: string; error?: string }> {
+export async function generateCustomerPDF(orderId: string): Promise<{ base64?: string; filename?: string; error?: string }> {
   const supabase = await getSupabaseServerClient()
 
   const [orderResult, paymentsResult] = await Promise.all([
@@ -26,21 +24,21 @@ export async function generateAndUploadPDF(orderId: string): Promise<{ url?: str
       .single(),
     supabase
       .from('payments')
-      .select('amount')
-      .eq('order_id', orderId),
+      .select('amount, payment_date, payment_method, notes')
+      .eq('order_id', orderId)
+      .order('payment_date', { ascending: true }),
   ])
 
   if (orderResult.error || !orderResult.data) return { error: orderResult.error?.message ?? 'Order not found' }
   const order = orderResult.data as Order
+  const payments = (paymentsResult.data ?? []) as Payment[]
 
-  // True remaining = (total - down_payment) minus all recorded additional payments
-  const paidSum = (paymentsResult.data ?? []).reduce((s, p) => s + p.amount, 0)
+  const paidSum = payments.reduce((s, p) => s + p.amount, 0)
   const trueRemaining = Math.max(0, order.remaining_balance - paidSum)
 
   const { renderToBuffer } = await import('@react-pdf/renderer')
   const { OrderPDF } = await import('@/components/pdf/OrderPDF')
 
-  // Resolve webp → jpg for existing order items that stored the old URL
   const orderForPDF = {
     ...order,
     order_items: (order.order_items ?? []).map(item => ({
@@ -50,37 +48,10 @@ export async function generateAndUploadPDF(orderId: string): Promise<{ url?: str
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buffer = await renderToBuffer(createElement(OrderPDF, { order: orderForPDF, trueRemaining }) as any)
+  const buffer = await renderToBuffer(createElement(OrderPDF, { order: orderForPDF, trueRemaining, payments }) as any)
 
-  const serviceClient = await getSupabaseServiceClient()
   const safeName = order.customer?.name?.replace(/[^a-zA-Z0-9À-ž]/g, '-').replace(/-+/g, '-') ?? 'Kunde'
+  const filename = `Order-${order.order_number}-${safeName}.pdf`
 
-  // Unique filename per generation so the CDN never serves a stale cached version
-  const fileName = `Order-${order.order_number}-${safeName}-${Date.now()}.pdf`
-
-  // Remember old file path for cleanup after successful upload
-  const oldFileName = order.pdf_url
-    ? decodeURIComponent(order.pdf_url.split('/generated-pdfs/')[1]?.split('?')[0] ?? '')
-    : ''
-
-  const { error: uploadError } = await serviceClient.storage
-    .from('generated-pdfs')
-    .upload(fileName, buffer, { contentType: 'application/pdf' })
-
-  if (uploadError) return { error: uploadError.message }
-
-  const { data: urlData, error: urlError } = await serviceClient.storage
-    .from('generated-pdfs')
-    .createSignedUrl(fileName, 60 * 60 * 24 * 30)
-
-  if (urlError || !urlData) return { error: urlError?.message ?? 'Failed to create URL' }
-
-  await saveOrderPdfUrl(orderId, urlData.signedUrl)
-
-  // Clean up the previous PDF (ignore errors — file may not exist)
-  if (oldFileName) {
-    await serviceClient.storage.from('generated-pdfs').remove([oldFileName])
-  }
-
-  return { url: urlData.signedUrl }
+  return { base64: buffer.toString('base64'), filename }
 }

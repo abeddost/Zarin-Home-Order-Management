@@ -29,8 +29,9 @@ export default function OrdersPage() {
     const supabase = getSupabaseBrowserClient()
     const { data } = await supabase
       .from('orders')
-      .select('*, customer:customers(name, phone), payments(amount)')
+      .select('id, order_number, order_date, total_price, down_payment, remaining_balance, payment_status, order_status, order_source, created_at, customer:customers(name, phone), payments(amount)')
       .order('created_at', { ascending: false })
+      .limit(200)
     setOrders((data as OrderWithPayments[]) ?? [])
     setLoading(false)
   }
@@ -125,6 +126,7 @@ export default function OrdersPage() {
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Customer</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Total</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Remaining</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-500">Source</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Status</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Payment</th>
                   <th className="px-4 py-3" />
@@ -138,6 +140,13 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 text-stone-800 font-medium">{order.customer?.name ?? '—'}</td>
                     <td className="px-4 py-3 font-medium text-stone-800">{formatCurrency(order.total_price)}</td>
                     <td className="px-4 py-3 text-stone-600">{formatCurrency(trueRemaining(order))}</td>
+                    <td className="px-4 py-3">
+                      {order.order_source ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-600">
+                          {order.order_source === 'turkey' ? 'Turkey' : 'Depot'}
+                        </span>
+                      ) : <span className="text-stone-300 text-xs">—</span>}
+                    </td>
                     <td className="px-4 py-3"><OrderStatusBadge status={order.order_status} /></td>
                     <td className="px-4 py-3"><PaymentStatusBadge status={order.payment_status} /></td>
                     <td className="px-4 py-3">

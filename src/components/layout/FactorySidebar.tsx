@@ -3,20 +3,29 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { ShoppingBag, LogOut, Menu, X } from 'lucide-react'
+import { ShoppingBag, LogOut, Menu, X, Package } from 'lucide-react'
 import { useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import type { AppAccess } from '@/lib/access'
 
 const navItems = [
   { href: '/factory/orders', label: 'Orders', icon: ShoppingBag },
 ]
 
-export function FactorySidebar() {
+const productsNavItem = { href: '/products', label: 'Products', icon: Package }
+
+function navItemsForAccess(access: AppAccess) {
+  if (access === 'factory-products') return [...navItems, productsNavItem]
+  return navItems
+}
+
+export function FactorySidebar({ access = 'factory-products' }: { access?: AppAccess }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const visibleNavItems = navItemsForAccess(access)
 
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient()
@@ -32,8 +41,8 @@ export function FactorySidebar() {
         <p className="text-xs text-stone-400 mt-0.5">Factory Portal</p>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
+        {visibleNavItems.map(({ href, label, icon: Icon }) => {
+          const active = href === '/factory/orders' ? pathname.startsWith('/factory/orders') : pathname.startsWith(href)
           return (
             <Link key={href} href={href} onClick={() => setMobileOpen(false)}
               className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',

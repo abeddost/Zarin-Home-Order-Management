@@ -60,6 +60,7 @@ function orderToFormState(order: Order): FormState {
     delivery_address: order.delivery_address ?? '',
     internal_notes: order.internal_notes ?? '',
     factory_notes: order.factory_notes ?? '',
+    order_source: order.order_source ?? '',
   }
 }
 
@@ -124,6 +125,7 @@ export function OrderEditForm({ order, customers, products, basePath = '/orders'
         delivery_address: form.delivery_address,
         internal_notes: form.internal_notes,
         factory_notes: form.factory_notes,
+        order_source: form.order_source,
       })
 
       if (result.error) { toast.error(result.error); return }

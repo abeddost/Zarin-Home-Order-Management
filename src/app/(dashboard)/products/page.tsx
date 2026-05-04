@@ -24,9 +24,10 @@ export default function ProductsPage() {
     const supabase = getSupabaseBrowserClient()
     const { data } = await supabase
       .from('products')
-      .select('*')
+      .select('id, model_name, category, default_image_url, colors, notes, is_active, created_at')
       .order('category')
       .order('model_name')
+      .limit(300)
     setProducts((data as Product[]) ?? [])
     setLoading(false)
   }

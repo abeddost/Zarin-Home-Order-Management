@@ -19,6 +19,19 @@ export function Step4Tracking({ form, set }: Props) {
         <p className="text-sm text-stone-500 mt-1">Set initial status and add any relevant notes.</p>
       </div>
 
+      <div className="space-y-1.5">
+        <Label>Order Source</Label>
+        <select
+          className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
+          value={form.order_source}
+          onChange={e => set('order_source', e.target.value)}
+        >
+          <option value="">Not set</option>
+          <option value="depot">Depot</option>
+          <option value="turkey">Turkey</option>
+        </select>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Factory Status</Label>

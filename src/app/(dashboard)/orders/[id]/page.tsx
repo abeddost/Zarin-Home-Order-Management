@@ -2,7 +2,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, FileText, CreditCard, Factory, Truck, Package, Pencil } from 'lucide-react'
+import { ChevronLeft, CreditCard, Factory, Truck, Package, Pencil } from 'lucide-react'
 import { OrderStatusBadge, FactoryStatusBadge, DeliveryStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
 import { OrderTimeline } from '@/components/orders/OrderTimeline'
 import { OrderDetailActions } from '@/components/orders/OrderDetailActions'
@@ -66,7 +66,7 @@ export default async function OrderDetailPage({ params }: Props) {
             >
               <Pencil className="w-3.5 h-3.5" /> Edit Order
             </Link>
-            <OrderDetailActions order={order} trueRemaining={trueRemaining} showDelete={false} showFactoryPDF={false} />
+            <OrderDetailActions order={order} trueRemaining={trueRemaining} showDelete={false} showFactoryPDF />
           </div>
         </div>
       </div>
@@ -177,6 +177,14 @@ export default async function OrderDetailPage({ params }: Props) {
             ) : (
               <p className="text-stone-400 text-sm">No customer linked</p>
             )}
+            {order.order_source && (
+              <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between text-sm">
+                <span className="text-stone-500">Source</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-600">
+                  {order.order_source === 'turkey' ? 'Turkey' : 'Depot'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Financial Summary */}
@@ -249,24 +257,6 @@ export default async function OrderDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* PDF */}
-          <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5">
-            <h2 className="font-semibold text-stone-800 mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Factory PDF
-            </h2>
-            {order.pdf_url ? (
-              <a
-                href={order.pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-stone-600 underline hover:text-stone-900"
-              >
-                Download PDF →
-              </a>
-            ) : (
-              <p className="text-stone-400 text-sm">No PDF generated yet.</p>
-            )}
-          </div>
         </div>
       </div>
     </div>

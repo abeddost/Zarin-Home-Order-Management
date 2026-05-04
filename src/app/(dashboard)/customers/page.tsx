@@ -18,7 +18,11 @@ export default function CustomersPage() {
 
   async function fetchCustomers() {
     const supabase = getSupabaseBrowserClient()
-    const { data } = await supabase.from('customers').select('*').order('name')
+    const { data } = await supabase
+      .from('customers')
+      .select('id, name, phone, email, address, city, postal_code, notes, created_at')
+      .order('name')
+      .limit(500)
     setCustomers((data as Customer[]) ?? [])
     setLoading(false)
   }

@@ -1,6 +1,6 @@
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import { COMPANY_INFO } from '@/lib/constants'
-import type { Order } from '@/types'
+import type { Order, Payment } from '@/types'
 
 const S = StyleSheet.create({
   page: { flexDirection: 'column', backgroundColor: '#FFFFFF', padding: 24, fontSize: 9, fontFamily: 'Helvetica' },
@@ -42,7 +42,7 @@ function fmtDate(s: string | null | undefined) {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-export function OrderPDF({ order, trueRemaining }: { order: Order; trueRemaining?: number }) {
+export function OrderPDF({ order, trueRemaining, payments }: { order: Order; trueRemaining?: number; payments?: Payment[] }) {
   const items = order.order_items ?? []
   const customer = order.customer
 
@@ -139,6 +139,12 @@ export function OrderPDF({ order, trueRemaining }: { order: Order; trueRemaining
               <Text style={S.footerLabel}>Anzahlung / Down:</Text>
               <Text style={S.footerValue}>{fmt(order.down_payment)}</Text>
             </View>
+            {(payments ?? []).map((p, i) => (
+              <View key={i} style={S.footerRow}>
+                <Text style={S.footerLabel}>Zahlung {fmtDate(p.payment_date)}:</Text>
+                <Text style={S.footerValue}>{fmt(p.amount)}</Text>
+              </View>
+            ))}
             <View style={S.footerRow}>
               <Text style={S.footerLabel}>Restbetrag / Rest:</Text>
               <Text style={S.footerValue}>{fmt(trueRemaining ?? order.remaining_balance)}</Text>

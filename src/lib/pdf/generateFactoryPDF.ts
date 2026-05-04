@@ -1,7 +1,7 @@
 'use server'
 
 import { createElement } from 'react'
-import { getSupabaseServerClient, getSupabaseServiceClient } from '@/lib/supabase/server'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PRODUCT_IMAGE_MAP } from '@/lib/productImages'
 import type { Order, OrderItem } from '@/types'
 
@@ -13,7 +13,12 @@ function pdfSafeImageUrl(item: OrderItem): string | null {
   return mapped && !mapped.toLowerCase().endsWith('.webp') ? mapped : null
 }
 
-export async function generateAndUploadFactoryPDF(orderId: string): Promise<{ url?: string; error?: string }> {
+async function buildBuffer(orderId: string): Promise<{
+  buffer?: Buffer
+  order?: Order
+  trueRemaining?: number
+  error?: string
+}> {
   const supabase = await getSupabaseServerClient()
 
   const [orderResult, paymentsResult] = await Promise.all([
@@ -47,22 +52,16 @@ export async function generateAndUploadFactoryPDF(orderId: string): Promise<{ ur
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buffer = await renderToBuffer(createElement(FactoryPDF, { order: orderForPDF, trueRemaining }) as any)
+  return { buffer: buffer as unknown as Buffer, order, trueRemaining }
+}
 
-  const serviceClient = await getSupabaseServiceClient()
-  const safeName = order.customer?.name?.replace(/[^a-zA-Z0-9À-ž]/g, '-').replace(/-+/g, '-') ?? 'Kunde'
-  const fileName = `Factory-Order-${order.order_number}-${safeName}-${Date.now()}.pdf`
+/** On-demand generation — returns base64, no storage. */
+export async function generateFactoryPDF(orderId: string): Promise<{ base64?: string; filename?: string; error?: string }> {
+  const { buffer, order, error } = await buildBuffer(orderId)
+  if (error || !buffer || !order) return { error: error ?? 'Failed to generate PDF' }
 
-  const { error: uploadError } = await serviceClient.storage
-    .from('generated-pdfs')
-    .upload(fileName, buffer, { contentType: 'application/pdf' })
+  const safeName = order.customer?.name?.replace(/[^a-zA-Z0-9À-ž]/g, '-').replace(/-+/g, '-') ?? 'Fabrika'
+  const filename = `Factory-Order-${order.order_number}-${safeName}.pdf`
 
-  if (uploadError) return { error: uploadError.message }
-
-  const { data: urlData, error: urlError } = await serviceClient.storage
-    .from('generated-pdfs')
-    .createSignedUrl(fileName, 60 * 60 * 24 * 30)
-
-  if (urlError || !urlData) return { error: urlError?.message ?? 'Failed to create URL' }
-
-  return { url: urlData.signedUrl }
+  return { base64: Buffer.from(buffer).toString('base64'), filename }
 }

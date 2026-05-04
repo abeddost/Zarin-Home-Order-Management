@@ -18,6 +18,7 @@ export interface CreateOrderInput {
   delivery_address: string
   internal_notes: string
   factory_notes: string
+  order_source?: string
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<{ orderId?: string; orderNumber?: string; error?: string }> {
@@ -50,6 +51,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId?: 
       delivery_address: input.delivery_address || null,
       internal_notes: input.internal_notes || null,
       factory_notes: input.factory_notes || null,
+      order_source: input.order_source || null,
       order_status: 'draft',
       created_by: user.id,
     })
@@ -77,6 +79,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId?: 
   }
 
   revalidatePath('/orders')
+
   return { orderId: order.id, orderNumber: order_number }
 }
 
@@ -250,6 +253,7 @@ export async function updateOrder(
     delivery_address: input.delivery_address || null,
     internal_notes: input.internal_notes || null,
     factory_notes: input.factory_notes || null,
+    order_source: input.order_source || null,
   }).eq('id', orderId)
 
   if (orderError) return { error: orderError.message }
@@ -278,5 +282,6 @@ export async function updateOrder(
 
   revalidatePath('/orders')
   revalidatePath(`/orders/${orderId}`)
+
   return {}
 }

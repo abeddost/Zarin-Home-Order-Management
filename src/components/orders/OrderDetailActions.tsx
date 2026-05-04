@@ -8,8 +8,8 @@ import { toast } from 'sonner'
 import { Loader2, CreditCard, Package, Factory, Truck, FileText, Trash2 } from 'lucide-react'
 import { StatusUpdateModal } from './StatusUpdateModal'
 import { PaymentModal } from './PaymentModal'
-import { generateAndUploadPDF } from '@/lib/pdf/generatePDF'
-import { generateAndUploadFactoryPDF } from '@/lib/pdf/generateFactoryPDF'
+import { generateCustomerPDF } from '@/lib/pdf/generatePDF'
+import { generateFactoryPDF } from '@/lib/pdf/generateFactoryPDF'
 import { deleteOrder } from '@/actions/orders'
 import type { Order } from '@/types'
 
@@ -18,6 +18,17 @@ interface Props {
   trueRemaining: number
   showDelete?: boolean
   showFactoryPDF?: boolean
+}
+
+function openBase64PDF(base64: string, filename: string) {
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+  const blob = new Blob([bytes], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
 export function OrderDetailActions({
@@ -37,22 +48,22 @@ export function OrderDetailActions({
   function handleCustomerPdf() {
     startPdfTransition(async () => {
       toast.loading('Generating Customer PDF...')
-      const result = await generateAndUploadPDF(order.id)
+      const result = await generateCustomerPDF(order.id)
       toast.dismiss()
       if (result.error) { toast.error(result.error); return }
-      toast.success('Customer PDF generated!')
-      if (result.url) window.open(result.url, '_blank')
+      openBase64PDF(result.base64!, result.filename!)
+      toast.success('Customer PDF ready')
     })
   }
 
   function handleFactoryPdf() {
     startFactoryPdfTransition(async () => {
       toast.loading('Generating Factory PDF...')
-      const result = await generateAndUploadFactoryPDF(order.id)
+      const result = await generateFactoryPDF(order.id)
       toast.dismiss()
       if (result.error) { toast.error(result.error); return }
-      toast.success('Factory PDF generated!')
-      if (result.url) window.open(result.url, '_blank')
+      openBase64PDF(result.base64!, result.filename!)
+      toast.success('Factory PDF ready')
     })
   }
 
@@ -80,15 +91,27 @@ export function OrderDetailActions({
         <Button variant="outline" size="sm" onClick={() => setPaymentModal(true)}>
           <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Add Payment
         </Button>
-        <Button variant="outline" size="sm" onClick={handleCustomerPdf} disabled={isPdfPending}>
+
+        <Button
+          size="sm"
+          onClick={handleCustomerPdf}
+          disabled={isPdfPending}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+        >
           {isPdfPending
             ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
             : <FileText className="w-3.5 h-3.5 mr-1.5" />
           }
           Customer PDF
         </Button>
+
         {showFactoryPDF && (
-          <Button variant="outline" size="sm" onClick={handleFactoryPdf} disabled={isFactoryPdfPending}>
+          <Button
+            size="sm"
+            onClick={handleFactoryPdf}
+            disabled={isFactoryPdfPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+          >
             {isFactoryPdfPending
               ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
               : <Factory className="w-3.5 h-3.5 mr-1.5" />
@@ -96,6 +119,7 @@ export function OrderDetailActions({
             Factory PDF
           </Button>
         )}
+
         {showDelete && (
           <Button
             variant="outline"
@@ -108,7 +132,6 @@ export function OrderDetailActions({
         )}
       </div>
 
-      {/* Delete confirmation dialog */}
       {showDelete && (
         <Dialog open={deleteModal} onOpenChange={setDeleteModal}>
           <DialogContent className="max-w-sm">

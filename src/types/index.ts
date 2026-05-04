@@ -39,6 +39,8 @@ export type PaymentStatus = 'unpaid' | 'partially_paid' | 'paid'
 
 export type PaymentMethod = 'cash' | 'bank_transfer' | 'installment' | 'other'
 
+export type OrderSource = 'depot' | 'turkey'
+
 export interface Profile {
   id: string
   full_name: string | null
@@ -90,6 +92,7 @@ export interface Order {
   internal_notes: string | null
   factory_notes: string | null
   pdf_url: string | null
+  order_source: OrderSource | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -165,6 +168,7 @@ export interface OrderFormValues {
   delivery_address: string
   internal_notes: string
   factory_notes: string
+  order_source: string
 }
 
 // Dashboard stats

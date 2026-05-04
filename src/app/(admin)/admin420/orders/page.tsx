@@ -19,7 +19,7 @@ function trueRemaining(order: OrderWithPayments): number {
 }
 
 function exportCSV(orders: OrderWithPayments[]) {
-  const header = ['Order #', 'Order Date', 'Customer Name', 'Customer Phone', 'Customer Address', 'Delivery Date', 'Total (€)', 'Down Payment (€)', 'Remaining (€)']
+  const header = ['Order #', 'Order Date', 'Customer Name', 'Customer Phone', 'Customer Address', 'Delivery Date', 'Source', 'Total (€)', 'Down Payment (€)', 'Remaining (€)']
   const rows = orders.map(o => [
     o.order_number,
     o.order_date ?? '',
@@ -27,6 +27,7 @@ function exportCSV(orders: OrderWithPayments[]) {
     o.customer?.phone ?? '',
     o.customer?.address ?? '',
     o.expected_delivery_date ?? '',
+    o.order_source ?? '',
     o.total_price.toFixed(2),
     o.down_payment.toFixed(2),
     trueRemaining(o).toFixed(2),
@@ -52,8 +53,9 @@ export default function AdminOrdersPage() {
     const supabase = getSupabaseBrowserClient()
     const { data } = await supabase
       .from('orders')
-      .select('*, customer:customers(name, phone, address), payments(amount)')
+      .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, order_source, created_at, customer:customers(name, phone, address), payments(amount)')
       .order('created_at', { ascending: false })
+      .limit(500)
     setOrders((data as OrderWithPayments[]) ?? [])
     setLoading(false)
   }, [])
@@ -131,6 +133,7 @@ export default function AdminOrdersPage() {
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Customer</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Total</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Remaining</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-500">Source</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Status</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Payment</th>
                   <th className="px-4 py-3" />
@@ -144,6 +147,13 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-3 text-stone-800 font-medium">{order.customer?.name ?? '—'}</td>
                     <td className="px-4 py-3 font-medium text-stone-800">{formatCurrency(order.total_price)}</td>
                     <td className="px-4 py-3 text-stone-600">{formatCurrency(trueRemaining(order))}</td>
+                    <td className="px-4 py-3">
+                      {order.order_source ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-600">
+                          {order.order_source === 'turkey' ? 'Turkey' : 'Depot'}
+                        </span>
+                      ) : <span className="text-stone-300 text-xs">—</span>}
+                    </td>
                     <td className="px-4 py-3"><OrderStatusBadge status={order.order_status} /></td>
                     <td className="px-4 py-3"><PaymentStatusBadge status={order.payment_status} /></td>
                     <td className="px-4 py-3"><Link href={`/admin420/orders/${order.id}`} className="text-stone-500 hover:text-stone-900 text-xs font-medium">View →</Link></td>

@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   Users,
   Package,
+  Factory,
   LogOut,
   Menu,
   X,
@@ -15,6 +16,7 @@ import { useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import type { AppAccess } from '@/lib/access'
 
 const navItems = [
   { href: '/orders',    label: 'Orders',     icon: ShoppingBag },
@@ -22,10 +24,19 @@ const navItems = [
   { href: '/products',  label: 'Products',   icon: Package },
 ]
 
-export function Sidebar() {
+const factoryNavItem = { href: '/factory', label: 'Factory', icon: Factory }
+
+function navItemsForAccess(access: AppAccess) {
+  if (access === 'factory-products') return [factoryNavItem, navItems[2]]
+  if (access === 'admin') return [...navItems, factoryNavItem]
+  return navItems
+}
+
+export function Sidebar({ access = 'seller' }: { access?: AppAccess }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const visibleNavItems = navItemsForAccess(access)
 
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient()
@@ -44,8 +55,8 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
+        {visibleNavItems.map(({ href, label, icon: Icon }) => {
+          const active = href === '/factory' ? pathname.startsWith('/factory') : pathname.startsWith(href)
           return (
             <Link
               key={href}
