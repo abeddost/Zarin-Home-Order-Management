@@ -32,5 +32,12 @@ export const PRODUCT_IMAGE_MAP: Record<string, string> = {
 }
 
 export function getProductImage(modelName: string, dbUrl?: string | null): string {
-  return dbUrl ?? PRODUCT_IMAGE_MAP[modelName] ?? '/placeholder-product.png'
+  const url = dbUrl ?? PRODUCT_IMAGE_MAP[modelName]
+  return url ? encodeURI(url) : '/placeholder-product.svg'
+}
+
+export const PRODUCT_IMAGE_SIZES = {
+  thumb: '80px',
+  picker: '(max-width: 640px) 33vw, 160px',
+  card: '(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 220px',
 }

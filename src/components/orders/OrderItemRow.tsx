@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, ImageIcon } from 'lucide-react'
-import { getProductImage } from '@/lib/productImages'
+import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { isSofaCategory } from '@/lib/utils'
 import { SOFA_CONFIGURATIONS } from '@/lib/constants'
 import { ProductPickerModal } from './ProductPickerModal'
@@ -49,7 +49,13 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
             title="Click to pick product"
           >
             {imageUrl ? (
-              <Image src={imageUrl} alt={item.model_name || 'Product'} fill className="object-cover" unoptimized />
+              <Image
+                src={imageUrl}
+                alt={item.model_name || 'Product'}
+                fill
+                sizes={PRODUCT_IMAGE_SIZES.thumb}
+                className="object-cover"
+              />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-stone-400 group-hover:text-stone-600">
                 <ImageIcon className="w-6 h-6" />

@@ -15,11 +15,11 @@ export default async function AdminDashboardPage() {
 
   const [ordersResult, recentResult] = await Promise.all([
     supabase.from('orders').select('order_status, payment_status, total_price, down_payment, remaining_balance'),
-    supabase.from('orders').select('*, customer:customers(name, phone)').order('created_at', { ascending: false }).limit(10),
+    supabase.from('orders').select('id, order_number, order_date, total_price, order_status, payment_status, created_at, customer:customers(name, phone)').order('created_at', { ascending: false }).limit(10),
   ])
 
   const orders = ordersResult.data ?? []
-  const recentOrders = (recentResult.data ?? []) as Order[]
+  const recentOrders = (recentResult.data ?? []) as unknown as Order[]
 
   const stats = {
     total:             orders.length,

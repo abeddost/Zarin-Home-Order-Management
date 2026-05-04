@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ProductModal } from '@/components/products/ProductModal'
-import { getProductImage } from '@/lib/productImages'
+import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { PRODUCT_CATEGORIES } from '@/lib/constants'
 import { Plus, Search, Pencil, Package } from 'lucide-react'
 import type { Product } from '@/types'
@@ -19,6 +19,8 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
+  const [visibleCount, setVisibleCount] = useState(40)
+  const deferredSearch = useDeferredValue(search)
 
   async function fetchProducts() {
     const supabase = getSupabaseBrowserClient()
@@ -34,11 +36,15 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts() }, [])
 
-  const filtered = products.filter(p => {
-    const matchSearch = !search || p.model_name.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => { setVisibleCount(40) }, [deferredSearch, categoryFilter])
+
+  const filtered = useMemo(() => products.filter(p => {
+    const matchSearch = !deferredSearch || p.model_name.toLowerCase().includes(deferredSearch.toLowerCase())
     const matchCat = !categoryFilter || p.category === categoryFilter
     return matchSearch && matchCat
-  })
+  }), [products, deferredSearch, categoryFilter])
+
+  const visibleProducts = filtered.slice(0, visibleCount)
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -89,16 +95,15 @@ export default function ProductsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filtered.map(product => (
+          {visibleProducts.map(product => (
             <div key={product.id} className="bg-white rounded-xl border border-stone-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
               <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden">
                 <Image
                   src={getProductImage(product.model_name, product.default_image_url)}
                   alt={product.model_name}
                   fill
+                  sizes={PRODUCT_IMAGE_SIZES.card}
                   className="object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.png' }}
-                  unoptimized
                 />
                 {!product.is_active && (
                   <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
@@ -128,6 +133,14 @@ export default function ProductsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && visibleProducts.length < filtered.length && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setVisibleCount(c => c + 40)}>
+            Load more products
+          </Button>
         </div>
       )}
 

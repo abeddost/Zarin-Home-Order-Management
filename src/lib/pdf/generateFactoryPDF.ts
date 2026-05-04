@@ -3,6 +3,7 @@
 import { createElement } from 'react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PRODUCT_IMAGE_MAP } from '@/lib/productImages'
+import { getUserAccess } from '@/lib/access'
 import type { Order, OrderItem } from '@/types'
 
 function pdfSafeImageUrl(item: OrderItem): string | null {
@@ -24,7 +25,7 @@ async function buildBuffer(orderId: string): Promise<{
   const [orderResult, paymentsResult] = await Promise.all([
     supabase
       .from('orders')
-      .select('*, customer:customers(*), order_items(*)')
+      .select('id, order_number, order_month, monthly_sequence, customer_id, order_date, total_price, down_payment, remaining_balance, payment_status, payment_method, payment_notes, order_status, factory_status, delivery_status, expected_delivery_date, delivery_address, internal_notes, factory_notes, pdf_url, order_source, created_by, created_at, updated_at, customer:customers(id, name, phone, email, address, city, postal_code, notes, created_at), order_items(id, order_id, product_id, model_name, category, sofa_configuration, color, quantity, image_url, unit_price, customization_note, created_at)')
       .eq('id', orderId)
       .single(),
     supabase
@@ -34,7 +35,12 @@ async function buildBuffer(orderId: string): Promise<{
   ])
 
   if (orderResult.error || !orderResult.data) return { error: orderResult.error?.message ?? 'Order not found' }
-  const order = orderResult.data as Order
+  const order = orderResult.data as unknown as Order
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (getUserAccess(user) === 'factory-products' && order.order_source !== 'turkey') {
+    return { error: 'Not allowed to generate this factory PDF' }
+  }
 
   const paidSum = (paymentsResult.data ?? []).reduce((s, p) => s + p.amount, 0)
   const trueRemaining = Math.max(0, order.remaining_balance - paidSum)

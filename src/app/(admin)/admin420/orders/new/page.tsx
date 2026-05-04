@@ -7,8 +7,8 @@ import type { Customer, Product } from '@/types'
 export default async function AdminNewOrderPage() {
   const supabase = await getSupabaseServerClient()
   const [customersResult, productsResult] = await Promise.all([
-    supabase.from('customers').select('*').order('name'),
-    supabase.from('products').select('*').eq('is_active', true).order('category').order('model_name'),
+    supabase.from('customers').select('id, name, phone, email, address, city, postal_code, notes, created_at').order('name').limit(500),
+    supabase.from('products').select('id, model_name, category, default_image_url, colors, notes, is_active, created_at').eq('is_active', true).order('category').order('model_name').limit(300),
   ])
   const customers = (customersResult.data ?? []) as Customer[]
   const products = (productsResult.data ?? []) as Product[]

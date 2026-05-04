@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,8 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [paymentFilter, setPaymentFilter] = useState('')
+  const [visibleCount, setVisibleCount] = useState(50)
+  const deferredSearch = useDeferredValue(search)
 
   async function fetchOrders() {
     const supabase = getSupabaseBrowserClient()
@@ -38,15 +40,19 @@ export default function OrdersPage() {
 
   useEffect(() => { fetchOrders() }, [])
 
-  const filtered = orders.filter(o => {
-    const matchSearch = !search ||
-      o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-      (o.customer?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (o.customer?.phone ?? '').includes(search)
+  useEffect(() => { setVisibleCount(50) }, [deferredSearch, statusFilter, paymentFilter])
+
+  const filtered = useMemo(() => orders.filter(o => {
+    const matchSearch = !deferredSearch ||
+      o.order_number.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      (o.customer?.name ?? '').toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      (o.customer?.phone ?? '').includes(deferredSearch)
     const matchStatus = !statusFilter || o.order_status === statusFilter
     const matchPayment = !paymentFilter || o.payment_status === paymentFilter
     return matchSearch && matchStatus && matchPayment
-  })
+  }), [orders, deferredSearch, statusFilter, paymentFilter])
+
+  const visibleOrders = filtered.slice(0, visibleCount)
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -133,7 +139,7 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-50">
-                {filtered.map(order => (
+                {visibleOrders.map(order => (
                   <tr key={order.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-4 py-3 font-mono font-semibold text-stone-800">#{order.order_number}</td>
                     <td className="px-4 py-3 text-stone-600">{formatDate(order.order_date)}</td>
@@ -161,6 +167,13 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+      {!loading && visibleOrders.length < filtered.length && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setVisibleCount(c => c + 50)}>
+            Load more orders
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

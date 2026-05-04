@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { OrderStatusBadge, FactoryStatusBadge, DeliveryStatusBadge } from '@/components/orders/StatusBadge'
@@ -9,34 +9,49 @@ import { ORDER_STATUSES } from '@/lib/constants'
 import { Search, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import type { Order } from '@/types'
+import { getUserAccess } from '@/lib/access'
 
 export default function FactoryOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [visibleCount, setVisibleCount] = useState(50)
+  const deferredSearch = useDeferredValue(search)
 
   useEffect(() => {
     async function fetch() {
       const supabase = getSupabaseBrowserClient()
-      const { data } = await supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      const access = getUserAccess(user)
+      let query = supabase
         .from('orders')
-        .select('id, order_number, order_date, order_status, factory_status, delivery_status, created_at, customer:customers(name, phone)')
+        .select('id, order_number, order_date, order_status, factory_status, delivery_status, order_source, created_at, customer:customers(name, phone)')
         .order('created_at', { ascending: false })
         .limit(200)
+
+      if (access === 'factory-products') {
+        query = query.eq('order_source', 'turkey')
+      }
+
+      const { data } = await query
       setOrders((data as Order[]) ?? [])
       setLoading(false)
     }
     fetch()
   }, [])
 
-  const filtered = orders.filter(o => {
-    const matchSearch = !search ||
-      o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-      (o.customer?.name ?? '').toLowerCase().includes(search.toLowerCase())
+  useEffect(() => { setVisibleCount(50) }, [deferredSearch, statusFilter])
+
+  const filtered = useMemo(() => orders.filter(o => {
+    const matchSearch = !deferredSearch ||
+      o.order_number.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      (o.customer?.name ?? '').toLowerCase().includes(deferredSearch.toLowerCase())
     const matchStatus = !statusFilter || o.order_status === statusFilter
     return matchSearch && matchStatus
-  })
+  }), [orders, deferredSearch, statusFilter])
+
+  const visibleOrders = filtered.slice(0, visibleCount)
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -87,7 +102,7 @@ export default function FactoryOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-50">
-                {filtered.map(order => (
+                {visibleOrders.map(order => (
                   <tr key={order.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-4 py-3 font-mono font-semibold text-stone-800">#{order.order_number}</td>
                     <td className="px-4 py-3 text-stone-600">{formatDate(order.order_date)}</td>
@@ -105,6 +120,16 @@ export default function FactoryOrdersPage() {
           </div>
         )}
       </div>
+      {!loading && visibleOrders.length < filtered.length && (
+        <div className="flex justify-center">
+          <button
+            className="h-10 px-4 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white hover:bg-stone-50"
+            onClick={() => setVisibleCount(c => c + 50)}
+          >
+            Load more orders
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { formatCurrency, formatDate, isSofaCategory } from '@/lib/utils'
 import { ORDER_STATUSES, FACTORY_STATUSES, DELIVERY_STATUSES, PAYMENT_METHODS } from '@/lib/constants'
-import { getProductImage } from '@/lib/productImages'
+import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import Image from 'next/image'
 import type { Customer, Product } from '@/types'
 import type { FormState } from './index'
@@ -66,7 +66,14 @@ export function Step5Preview({ form, customers, products }: Props) {
               <div key={i} className="flex items-center gap-3 bg-stone-50 rounded-xl p-3">
                 <div className="w-12 h-12 rounded-lg bg-stone-200 overflow-hidden shrink-0">
                   {imgUrl ? (
-                    <Image src={imgUrl} alt={item.model_name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
+                    <Image
+                      src={imgUrl}
+                      alt={item.model_name}
+                      width={48}
+                      height={48}
+                      sizes={PRODUCT_IMAGE_SIZES.thumb}
+                      className="object-cover w-full h-full"
+                    />
                   ) : null}
                 </div>
                 <div className="flex-1 min-w-0">

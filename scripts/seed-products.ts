@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import * as path from 'path'
+import sharp from 'sharp'
 
 // Load .env.local manually since tsx doesn't pick it up automatically
 const envPath = path.join(__dirname, '..', '.env.local')
@@ -66,11 +67,27 @@ const PRODUCTS: ProductDef[] = [
 ]
 
 function getMimeType(filename: string): string {
-  const ext = path.extname(filename).toLowerCase()
-  if (ext === '.webp') return 'image/webp'
-  if (ext === '.jpeg') return 'image/jpeg'
-  if (ext === '.png')  return 'image/png'
   return 'image/jpeg'
+}
+
+async function optimizeProductImage(filePath: string): Promise<Buffer> {
+  return sharp(filePath)
+    .rotate()
+    .resize({
+      width: 1600,
+      height: 1200,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .jpeg({
+      quality: 82,
+      mozjpeg: true,
+    })
+    .toBuffer()
+}
+
+function storagePathFor(sourcePath: string): string {
+  return sourcePath.replace(/\.(webp|png|jpe?g)$/i, '.jpg')
 }
 
 async function main() {
@@ -87,13 +104,18 @@ async function main() {
       continue
     }
 
-    const fileBuffer = fs.readFileSync(filePath)
-    const mimeType = getMimeType(product.source)
+    const fileBuffer = await optimizeProductImage(filePath)
+    const storagePath = storagePathFor(product.storage_path)
+    const mimeType = getMimeType(storagePath)
 
     // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from('product-images')
-      .upload(product.storage_path, fileBuffer, { contentType: mimeType, upsert: true })
+      .upload(storagePath, fileBuffer, {
+        contentType: mimeType,
+        cacheControl: '31536000',
+        upsert: true,
+      })
 
     if (uploadError) {
       console.error(`✗ Upload failed for ${product.model_name}: ${uploadError.message}`)
@@ -104,7 +126,7 @@ async function main() {
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
-      .getPublicUrl(product.storage_path)
+      .getPublicUrl(storagePath)
 
     // Upsert product row
     const { error: upsertError } = await supabase

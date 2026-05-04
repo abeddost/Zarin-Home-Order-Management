@@ -2,6 +2,7 @@
 
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getUserAccess } from '@/lib/access'
 import type { OrderItemFormValues, PaymentMethod, OrderStatus, FactoryStatus, DeliveryStatus } from '@/types'
 
 export interface CreateOrderInput {
@@ -19,6 +20,24 @@ export interface CreateOrderInput {
   internal_notes: string
   factory_notes: string
   order_source?: string
+}
+
+async function canAccessOrderForMutation(
+  supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>,
+  orderId: string
+): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  if (getUserAccess(user) !== 'factory-products') return true
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select('order_source')
+    .eq('id', orderId)
+    .single()
+
+  return !error && data?.order_source === 'turkey'
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<{ orderId?: string; orderNumber?: string; error?: string }> {
@@ -85,6 +104,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId?: 
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<{ error?: string }> {
   const supabase = await getSupabaseServerClient()
+  if (!(await canAccessOrderForMutation(supabase, orderId))) return { error: 'Not allowed to update this order' }
   const { error } = await supabase.from('orders').update({ order_status: status }).eq('id', orderId)
   if (error) return { error: error.message }
   revalidatePath('/orders')
@@ -98,6 +118,7 @@ export async function updateFactoryStatus(
   notes?: string
 ): Promise<{ error?: string }> {
   const supabase = await getSupabaseServerClient()
+  if (!(await canAccessOrderForMutation(supabase, orderId))) return { error: 'Not allowed to update this order' }
   const payload: Record<string, unknown> = { factory_status: status }
   if (notes !== undefined) payload.factory_notes = notes
   const { error } = await supabase.from('orders').update(payload).eq('id', orderId)
@@ -113,6 +134,7 @@ export async function updateDeliveryStatus(
   address?: string
 ): Promise<{ error?: string }> {
   const supabase = await getSupabaseServerClient()
+  if (!(await canAccessOrderForMutation(supabase, orderId))) return { error: 'Not allowed to update this order' }
   const payload: Record<string, unknown> = { delivery_status: status }
   if (date !== undefined) payload.expected_delivery_date = date || null
   if (address !== undefined) payload.delivery_address = address || null

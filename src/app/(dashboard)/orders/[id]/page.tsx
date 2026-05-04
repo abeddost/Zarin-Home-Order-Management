@@ -8,7 +8,7 @@ import { OrderTimeline } from '@/components/orders/OrderTimeline'
 import { OrderDetailActions } from '@/components/orders/OrderDetailActions'
 import { PaymentHistorySection } from '@/components/orders/PaymentHistorySection'
 import { formatCurrency, formatDate, isSofaCategory } from '@/lib/utils'
-import { getProductImage } from '@/lib/productImages'
+import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import type { Order, Payment, OrderStatusHistory } from '@/types'
 
 interface Props {
@@ -22,24 +22,24 @@ export default async function OrderDetailPage({ params }: Props) {
   const [orderResult, paymentsResult, historyResult] = await Promise.all([
     supabase
       .from('orders')
-      .select('*, customer:customers(*), order_items(*)')
+      .select('id, order_number, order_month, monthly_sequence, customer_id, order_date, total_price, down_payment, remaining_balance, payment_status, payment_method, payment_notes, order_status, factory_status, delivery_status, expected_delivery_date, delivery_address, internal_notes, factory_notes, pdf_url, order_source, created_by, created_at, updated_at, customer:customers(id, name, phone, email, address, city, postal_code, notes, created_at), order_items(id, order_id, product_id, model_name, category, sofa_configuration, color, quantity, image_url, unit_price, customization_note, created_at)')
       .eq('id', id)
       .single(),
     supabase
       .from('payments')
-      .select('*')
+      .select('id, order_id, amount, payment_method, payment_date, notes, created_at')
       .eq('order_id', id)
       .order('payment_date', { ascending: true }),
     supabase
       .from('order_status_history')
-      .select('*')
+      .select('id, order_id, old_status, new_status, field_changed, note, changed_by, created_at')
       .eq('order_id', id)
       .order('created_at', { ascending: true }),
   ])
 
   if (orderResult.error || !orderResult.data) notFound()
 
-  const order = orderResult.data as Order
+  const order = orderResult.data as unknown as Order
   const payments = (paymentsResult.data ?? []) as Payment[]
   const history = (historyResult.data ?? []) as OrderStatusHistory[]
 
@@ -111,8 +111,8 @@ export default async function OrderDetailPage({ params }: Props) {
                         src={getProductImage(item.model_name, item.image_url)}
                         alt={item.model_name}
                         width={64} height={64}
+                        sizes={PRODUCT_IMAGE_SIZES.thumb}
                         className="object-cover w-full h-full"
-                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-stone-300 text-xs">IMG</div>

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Check } from 'lucide-react'
 import Image from 'next/image'
-import { getProductImage } from '@/lib/productImages'
+import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { SOFA_CATEGORIES } from '@/lib/constants'
 import type { Product } from '@/types'
 
@@ -34,7 +34,13 @@ function ProductGrid({ items, selectedId, onSelect }: { items: Product[]; select
             }`}
           >
             <div className="aspect-[4/3] bg-stone-100 relative">
-              <Image src={imgUrl} alt={p.model_name} fill className="object-cover" unoptimized />
+              <Image
+                src={imgUrl}
+                alt={p.model_name}
+                fill
+                sizes={PRODUCT_IMAGE_SIZES.picker}
+                className="object-cover"
+              />
               {isSelected && (
                 <div className="absolute inset-0 bg-stone-900/20 flex items-center justify-center">
                   <div className="w-7 h-7 rounded-full bg-stone-900 flex items-center justify-center shadow">

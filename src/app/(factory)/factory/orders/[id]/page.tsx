@@ -4,10 +4,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, Factory, Truck, Package } from 'lucide-react'
 import { OrderStatusBadge, FactoryStatusBadge, DeliveryStatusBadge } from '@/components/orders/StatusBadge'
-import { StatusUpdateModal } from '@/components/orders/StatusUpdateModal'
 import { OrderTimeline } from '@/components/orders/OrderTimeline'
 import { formatCurrency, formatDate, isSofaCategory } from '@/lib/utils'
-import { getProductImage } from '@/lib/productImages'
+import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
+import { getUserAccess } from '@/lib/access'
 import type { Order, Payment, OrderStatusHistory } from '@/types'
 
 // Thin client wrapper just for status modals
@@ -19,15 +19,19 @@ export default async function FactoryOrderDetailPage({ params }: Props) {
   const { id } = await params
   const supabase = await getSupabaseServerClient()
 
-  const [orderResult, paymentsResult, historyResult] = await Promise.all([
-    supabase.from('orders').select('*, customer:customers(*), order_items(*)').eq('id', id).single(),
+  const [userResult, orderResult, paymentsResult, historyResult] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('orders').select('id, order_number, order_month, monthly_sequence, customer_id, order_date, total_price, down_payment, remaining_balance, payment_status, payment_method, payment_notes, order_status, factory_status, delivery_status, expected_delivery_date, delivery_address, internal_notes, factory_notes, pdf_url, order_source, created_by, created_at, updated_at, customer:customers(id, name, phone, email, address, city, postal_code, notes, created_at), order_items(id, order_id, product_id, model_name, category, sofa_configuration, color, quantity, image_url, unit_price, customization_note, created_at)').eq('id', id).single(),
     supabase.from('payments').select('amount').eq('order_id', id),
-    supabase.from('order_status_history').select('*').eq('order_id', id).order('created_at', { ascending: true }),
+    supabase.from('order_status_history').select('id, order_id, old_status, new_status, field_changed, note, changed_by, created_at').eq('order_id', id).order('created_at', { ascending: true }),
   ])
 
   if (orderResult.error || !orderResult.data) notFound()
 
-  const order = orderResult.data as Order
+  const order = orderResult.data as unknown as Order
+  const access = getUserAccess(userResult.data.user)
+  if (access === 'factory-products' && order.order_source !== 'turkey') notFound()
+
   const history = (historyResult.data ?? []) as OrderStatusHistory[]
   const paidSum = ((paymentsResult.data ?? []) as Payment[]).reduce((s, p) => s + p.amount, 0)
   const trueRemaining = Math.max(0, order.remaining_balance - paidSum)
@@ -75,7 +79,14 @@ export default async function FactoryOrderDetailPage({ params }: Props) {
                 <div key={item.id} className="flex items-start gap-3 p-3 bg-stone-50 rounded-xl">
                   <div className="w-16 h-16 rounded-lg bg-stone-200 overflow-hidden shrink-0">
                     {item.image_url ? (
-                      <Image src={getProductImage(item.model_name, item.image_url)} alt={item.model_name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
+                      <Image
+                        src={getProductImage(item.model_name, item.image_url)}
+                        alt={item.model_name}
+                        width={64}
+                        height={64}
+                        sizes={PRODUCT_IMAGE_SIZES.thumb}
+                        className="object-cover w-full h-full"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-stone-300 text-xs">IMG</div>
                     )}
