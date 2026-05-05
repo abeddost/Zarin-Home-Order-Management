@@ -11,6 +11,7 @@ import { Step2Items } from './OrderForm/Step2Items'
 import { Step3Payment } from './OrderForm/Step3Payment'
 import { Step4Tracking } from './OrderForm/Step4Tracking'
 import { Step5Preview } from './OrderForm/Step5Preview'
+import { getAllOrderFormErrors, getOrderFormStepErrors } from './OrderForm/validation'
 import type { Customer, Product, Order, OrderItemFormValues } from '@/types'
 import type { FormState } from './OrderForm/index'
 
@@ -68,6 +69,7 @@ export function OrderEditForm({ order, customers, products, basePath = '/orders'
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [isPending, startTransition] = useTransition()
+  const [stepErrors, setStepErrors] = useState<string[]>([])
   const [form, setForm] = useState<FormState>(() => orderToFormState(order))
 
   useEffect(() => {
@@ -90,26 +92,40 @@ export function OrderEditForm({ order, customers, products, basePath = '/orders'
   function addItem() { setForm(f => ({ ...f, items: [...f.items, EMPTY_ITEM()] })) }
   function removeItem(index: number) { setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== index) })) }
 
+  useEffect(() => {
+    if (stepErrors.length > 0) setStepErrors(getOrderFormStepErrors(form, step))
+  }, [form, step, stepErrors.length])
+
   function validate(): boolean {
-    if (step === 0 && form.customer_mode === 'existing' && !form.customer_id) {
-      toast.error('Please select a customer'); return false
-    }
-    if (step === 1) {
-      if (form.items.length === 0) { toast.error('Add at least one item'); return false }
-      for (const item of form.items) {
-        if (!item.model_name.trim()) { toast.error('Each item needs a model name'); return false }
-      }
-    }
-    if (step === 2 && form.total_price <= 0) {
-      toast.error('Total price must be greater than 0'); return false
+    const errors = getOrderFormStepErrors(form, step)
+    setStepErrors(errors)
+    if (errors.length > 0) {
+      toast.error(errors[0])
+      return false
     }
     return true
   }
 
-  function next() { if (validate()) setStep(s => Math.min(s + 1, STEPS.length - 1)) }
-  function prev() { setStep(s => Math.max(s - 1, 0)) }
+  function next() {
+    if (validate()) {
+      setStepErrors([])
+      setStep(s => Math.min(s + 1, STEPS.length - 1))
+    }
+  }
+  function prev() {
+    setStepErrors([])
+    setStep(s => Math.max(s - 1, 0))
+  }
 
   async function handleSubmit() {
+    const allErrors = getAllOrderFormErrors(form)
+    if (allErrors.length > 0) {
+      setStep(allErrors[0].step)
+      setStepErrors(allErrors[0].errors)
+      toast.error(allErrors[0].errors[0])
+      return
+    }
+
     startTransition(async () => {
       const result = await updateOrder(order.id, {
         customer_id: form.customer_id,
@@ -170,6 +186,14 @@ export function OrderEditForm({ order, customers, products, basePath = '/orders'
       </div>
 
       <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
+        {stepErrors.length > 0 && (
+          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="font-semibold mb-1">Please fix these required fields:</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              {stepErrors.map(error => <li key={error}>{error}</li>)}
+            </ul>
+          </div>
+        )}
         {stepComponents[step]}
       </div>
 

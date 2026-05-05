@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ProductModal } from '@/components/products/ProductModal'
-import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
+import { getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { PRODUCT_CATEGORIES } from '@/lib/constants'
 import { Plus, Search, Pencil, Package } from 'lucide-react'
 import type { Product } from '@/types'
@@ -99,11 +99,12 @@ export default function ProductsPage() {
             <div key={product.id} className="bg-white rounded-xl border border-stone-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
               <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden">
                 <Image
-                  src={getProductImage(product.model_name, product.default_image_url)}
+                  src={getProductThumbnail(product.model_name, product.default_image_url)}
                   alt={product.model_name}
                   fill
                   sizes={PRODUCT_IMAGE_SIZES.card}
                   className="object-cover"
+                  unoptimized
                 />
                 {!product.is_active && (
                   <div className="absolute inset-0 bg-white/60 flex items-center justify-center">

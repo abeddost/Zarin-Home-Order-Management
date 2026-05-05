@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, ImageIcon } from 'lucide-react'
-import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
+import { getProductImage, getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { isSofaCategory } from '@/lib/utils'
 import { SOFA_CONFIGURATIONS } from '@/lib/constants'
 import { ProductPickerModal } from './ProductPickerModal'
@@ -37,6 +37,7 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
   const product = products.find(p => p.id === item.product_id)
   const issofa = isSofaCategory(item.category)
   const imageUrl = item.image_url || (product ? getProductImage(product.model_name, product.default_image_url ?? undefined) : '')
+  const thumbnailUrl = imageUrl ? getProductThumbnail(item.model_name || product?.model_name || '', imageUrl, { width: 160, height: 160 }) : ''
 
   return (
     <div className="border border-stone-200 rounded-xl p-4 space-y-3 bg-white">
@@ -50,11 +51,12 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
           >
             {imageUrl ? (
               <Image
-                src={imageUrl}
+                src={thumbnailUrl}
                 alt={item.model_name || 'Product'}
                 fill
                 sizes={PRODUCT_IMAGE_SIZES.thumb}
                 className="object-cover"
+                unoptimized
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-stone-400 group-hover:text-stone-600">

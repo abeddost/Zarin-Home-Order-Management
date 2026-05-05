@@ -66,7 +66,7 @@ export function Step3Payment({ form, set }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label>Payment Method</Label>
+        <Label>Payment Method *</Label>
         <select
           className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
           value={form.payment_method}

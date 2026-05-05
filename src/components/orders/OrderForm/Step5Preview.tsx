@@ -2,7 +2,7 @@
 
 import { formatCurrency, formatDate, isSofaCategory } from '@/lib/utils'
 import { ORDER_STATUSES, FACTORY_STATUSES, DELIVERY_STATUSES, PAYMENT_METHODS } from '@/lib/constants'
-import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
+import { getProductImage, getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import Image from 'next/image'
 import type { Customer, Product } from '@/types'
 import type { FormState } from './index'
@@ -62,17 +62,19 @@ export function Step5Preview({ form, customers, products }: Props) {
           {form.items.map((item, i) => {
             const prod = products.find(p => p.id === item.product_id)
             const imgUrl = prod ? getProductImage(prod.model_name, prod.default_image_url ?? undefined) : item.image_url
+            const thumbUrl = imgUrl ? getProductThumbnail(item.model_name || prod?.model_name || '', imgUrl, { width: 96, height: 96 }) : ''
             return (
               <div key={i} className="flex items-center gap-3 bg-stone-50 rounded-xl p-3">
                 <div className="w-12 h-12 rounded-lg bg-stone-200 overflow-hidden shrink-0">
-                  {imgUrl ? (
+                  {thumbUrl ? (
                     <Image
-                      src={imgUrl}
+                      src={thumbUrl}
                       alt={item.model_name}
                       width={48}
                       height={48}
                       sizes={PRODUCT_IMAGE_SIZES.thumb}
                       className="object-cover w-full h-full"
+                      unoptimized
                     />
                   ) : null}
                 </div>

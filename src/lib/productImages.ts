@@ -33,7 +33,41 @@ export const PRODUCT_IMAGE_MAP: Record<string, string> = {
 
 export function getProductImage(modelName: string, dbUrl?: string | null): string {
   const url = dbUrl ?? PRODUCT_IMAGE_MAP[modelName]
-  return url ? encodeURI(url) : '/placeholder-product.svg'
+  return url ?? '/placeholder-product.svg'
+}
+
+function encodeStoragePath(path: string): string {
+  return path.split('/').map(part => encodeURIComponent(part)).join('/')
+}
+
+function getProductStoragePath(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    const objectMarker = '/storage/v1/object/public/product-images/'
+    const renderMarker = '/storage/v1/render/image/public/product-images/'
+    const marker = parsed.pathname.includes(objectMarker) ? objectMarker : renderMarker
+    const index = parsed.pathname.indexOf(marker)
+    if (index < 0) return null
+    return decodeURIComponent(parsed.pathname.slice(index + marker.length))
+  } catch {
+    return null
+  }
+}
+
+export function getProductThumbnail(
+  modelName: string,
+  dbUrl?: string | null,
+  options: { width?: number; height?: number; quality?: number } = {}
+): string {
+  const original = getProductImage(modelName, dbUrl)
+  const storagePath = getProductStoragePath(original)
+  if (!storagePath) return original
+
+  const width = options.width ?? 400
+  const height = options.height ?? 300
+  const quality = options.quality ?? 75
+
+  return `${BASE.replace('/object/public', '/render/image/public')}/${encodeStoragePath(storagePath)}?width=${width}&height=${height}&resize=cover&quality=${quality}`
 }
 
 export const PRODUCT_IMAGE_SIZES = {

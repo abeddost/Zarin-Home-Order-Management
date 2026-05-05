@@ -6,7 +6,7 @@ import { ChevronLeft, Factory, Truck, Package } from 'lucide-react'
 import { OrderStatusBadge, FactoryStatusBadge, DeliveryStatusBadge } from '@/components/orders/StatusBadge'
 import { OrderTimeline } from '@/components/orders/OrderTimeline'
 import { formatCurrency, formatDate, isSofaCategory } from '@/lib/utils'
-import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
+import { getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { getUserAccess } from '@/lib/access'
 import type { Order, Payment, OrderStatusHistory } from '@/types'
 
@@ -80,12 +80,13 @@ export default async function FactoryOrderDetailPage({ params }: Props) {
                   <div className="w-16 h-16 rounded-lg bg-stone-200 overflow-hidden shrink-0">
                     {item.image_url ? (
                       <Image
-                        src={getProductImage(item.model_name, item.image_url)}
+                        src={getProductThumbnail(item.model_name, item.image_url, { width: 128, height: 128 })}
                         alt={item.model_name}
                         width={64}
                         height={64}
                         sizes={PRODUCT_IMAGE_SIZES.thumb}
                         className="object-cover w-full h-full"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-stone-300 text-xs">IMG</div>

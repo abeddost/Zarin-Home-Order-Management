@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Check } from 'lucide-react'
 import Image from 'next/image'
-import { getProductImage, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
+import { getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { SOFA_CATEGORIES } from '@/lib/constants'
 import type { Product } from '@/types'
 
@@ -23,7 +23,7 @@ function ProductGrid({ items, selectedId, onSelect }: { items: Product[]; select
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-[420px] overflow-y-auto pr-1">
       {items.map(p => {
-        const imgUrl = getProductImage(p.model_name, p.default_image_url ?? undefined)
+        const imgUrl = getProductThumbnail(p.model_name, p.default_image_url ?? undefined)
         const isSelected = p.id === selectedId
         return (
           <button
@@ -40,6 +40,7 @@ function ProductGrid({ items, selectedId, onSelect }: { items: Product[]; select
                 fill
                 sizes={PRODUCT_IMAGE_SIZES.picker}
                 className="object-cover"
+                unoptimized
               />
               {isSelected && (
                 <div className="absolute inset-0 bg-stone-900/20 flex items-center justify-center">

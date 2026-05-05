@@ -34,7 +34,7 @@ export function Step1Customer({ form, customers, set }: Props) {
 
       {/* Order date */}
       <div className="space-y-1.5">
-        <Label>Order Date</Label>
+        <Label>Order Date *</Label>
         <Input
           type="date"
           value={form.order_date}
@@ -140,7 +140,7 @@ export function Step1Customer({ form, customers, set }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Phone</Label>
+              <Label>Phone *</Label>
               <Input
                 placeholder="+49 160 000 0000"
                 value={form.new_customer_phone}
