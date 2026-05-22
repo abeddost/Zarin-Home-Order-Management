@@ -21,7 +21,7 @@ function userIdentity(user: AppUser | null | undefined): string {
 export function getUserAccess(user: AppUser | null | undefined): AppAccess {
   const identity = userIdentity(user)
 
-  if (identity.includes('abed')) return 'admin'
+  if (identity.includes('abed') || identity.includes('nayim')) return 'admin'
   if (identity.includes('hamid')) return 'factory-products'
 
   return 'seller'

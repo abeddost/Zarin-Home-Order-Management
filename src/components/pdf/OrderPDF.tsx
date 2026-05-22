@@ -1,35 +1,37 @@
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import { COMPANY_INFO } from '@/lib/constants'
+import { registerPDFFonts } from '@/lib/pdf/fonts'
 import type { Order, Payment } from '@/types'
 
+registerPDFFonts()
+
 const S = StyleSheet.create({
-  page: { flexDirection: 'column', backgroundColor: '#FFFFFF', padding: 24, fontSize: 9, fontFamily: 'Helvetica' },
+  page: { flexDirection: 'column', backgroundColor: '#FFFFFF', padding: 24, fontSize: 11, fontFamily: 'NotoSans' },
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   companyBlock: { flexDirection: 'column', gap: 2 },
-  companyName: { fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
-  companyDetail: { fontSize: 8, color: '#78716c' },
+  companyName: { fontSize: 20, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917' },
   orderBlock: { flexDirection: 'column', alignItems: 'flex-end', gap: 2 },
-  orderNum: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
-  orderDate: { fontSize: 8, color: '#78716c' },
+  orderNum: { fontSize: 17, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917' },
+  orderDate: { fontSize: 10, color: '#78716c' },
   divider: { borderBottom: '1 solid #e7e5e4', marginBottom: 12 },
   // Items grid
   itemsSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   itemCard: { width: 170, flexDirection: 'column', borderRadius: 4, border: '1 solid #e7e5e4', overflow: 'hidden' },
   itemImage: { width: 170, height: 110, backgroundColor: '#f5f5f4', objectFit: 'cover' },
   itemBody: { padding: 8, flexDirection: 'column', gap: 3 },
-  itemModel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
+  itemModel: { fontSize: 13, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917' },
   itemRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
-  itemLabel: { fontSize: 7, color: '#a8a29e', fontFamily: 'Helvetica-Bold' },
-  itemValue: { fontSize: 8, color: '#44403c' },
+  itemLabel: { fontSize: 9, color: '#a8a29e', fontFamily: 'NotoSans', fontWeight: 'bold' },
+  itemValue: { fontSize: 10, color: '#44403c' },
   // Footer
   footer: { flexDirection: 'row', gap: 12, marginTop: 'auto' },
   footerCard: { flex: 1, padding: 10, backgroundColor: '#fafaf9', borderRadius: 4, border: '1 solid #e7e5e4', flexDirection: 'column', gap: 4 },
-  footerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#1c1917', marginBottom: 2 },
+  footerTitle: { fontSize: 11, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917', marginBottom: 2 },
   footerRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  footerLabel: { fontSize: 8, color: '#78716c' },
-  footerValue: { fontSize: 8, color: '#1c1917', fontFamily: 'Helvetica-Bold' },
-  footerText: { fontSize: 8, color: '#44403c' },
+  footerLabel: { fontSize: 10, color: '#78716c' },
+  footerValue: { fontSize: 10, color: '#1c1917', fontFamily: 'NotoSans', fontWeight: 'bold' },
+  footerText: { fontSize: 10, color: '#44403c' },
 })
 
 function fmt(n: number) {
@@ -54,8 +56,6 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
         <View style={S.header}>
           <View style={S.companyBlock}>
             <Text style={S.companyName}>{COMPANY_INFO.name}</Text>
-            <Text style={S.companyDetail}>{COMPANY_INFO.address}, {COMPANY_INFO.city}</Text>
-            <Text style={S.companyDetail}>{COMPANY_INFO.phone}</Text>
           </View>
           <View style={S.orderBlock}>
             <Text style={S.orderNum}>Bestellung / Order #{order.order_number}</Text>
@@ -73,12 +73,12 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
                 <Image src={item.image_url} style={S.itemImage} />
               ) : (
                 <View style={[S.itemImage, { alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ color: '#a8a29e', fontSize: 8 }}>No Image</Text>
+                  <Text style={{ color: '#a8a29e', fontSize: 10 }}>No Image</Text>
                 </View>
               )}
               <View style={S.itemBody}>
                 <Text style={S.itemModel}>{item.model_name}</Text>
-                <Text style={{ fontSize: 7, color: '#78716c' }}>{item.category}</Text>
+                <Text style={{ fontSize: 9, color: '#78716c' }}>{item.category}</Text>
                 {item.sofa_configuration ? (
                   <View style={S.itemRow}>
                     <Text style={S.itemLabel}>Sitz / Config:</Text>
@@ -99,8 +99,8 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
                 </View>
                 {item.customization_note ? (
                   <View style={{ backgroundColor: '#fef3c7', borderRadius: 3, padding: 4, marginTop: 2 }}>
-                    <Text style={{ fontSize: 7, color: '#92400e', fontFamily: 'Helvetica-Bold' }}>Notiz / Note:</Text>
-                    <Text style={{ fontSize: 7, color: '#78350f' }}>{item.customization_note}</Text>
+                    <Text style={{ fontSize: 9, color: '#92400e', fontFamily: 'NotoSans', fontWeight: 'bold' }}>Notiz / Note:</Text>
+                    <Text style={{ fontSize: 9, color: '#78350f' }}>{item.customization_note}</Text>
                   </View>
                 ) : null}
               </View>
@@ -164,7 +164,7 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
               <Text style={S.footerText}>{order.factory_notes}</Text>
             ) : null}
             {order.internal_notes ? (
-              <Text style={[S.footerText, { color: '#78716c', fontStyle: 'italic' }]}>{order.internal_notes}</Text>
+              <Text style={[S.footerText, { color: '#78716c' }]}>{order.internal_notes}</Text>
             ) : null}
             {order.expected_delivery_date ? (
               <Text style={S.footerText}>Lieferung / Delivery: {fmtDate(order.expected_delivery_date)}</Text>
@@ -173,7 +173,7 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
               <Text style={S.footerText}>{order.delivery_address}</Text>
             ) : null}
             {!order.factory_notes && !order.internal_notes && !order.expected_delivery_date ? (
-              <Text style={{ fontSize: 8, color: '#a8a29e' }}>—</Text>
+              <Text style={{ fontSize: 10, color: '#a8a29e' }}>—</Text>
             ) : null}
           </View>
         </View>

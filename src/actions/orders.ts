@@ -246,13 +246,38 @@ export async function deletePayment(
 
 export async function deleteOrder(orderId: string): Promise<{ error?: string }> {
   const supabase = await getSupabaseServerClient()
-  // Delete related records first in case FK constraints don't cascade
-  await supabase.from('order_items').delete().eq('order_id', orderId)
-  await supabase.from('payments').delete().eq('order_id', orderId)
-  await supabase.from('order_status_history').delete().eq('order_id', orderId)
-  const { error } = await supabase.from('orders').delete().eq('id', orderId)
+  const { error } = await supabase
+    .from('orders')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', orderId)
   if (error) return { error: error.message }
   revalidatePath('/orders')
+  revalidatePath('/admin420/orders')
+  return {}
+}
+
+export async function bulkDeleteOrders(orderIds: string[]): Promise<{ error?: string }> {
+  if (orderIds.length === 0) return {}
+  const supabase = await getSupabaseServerClient()
+  const { error } = await supabase
+    .from('orders')
+    .update({ deleted_at: new Date().toISOString() })
+    .in('id', orderIds)
+  if (error) return { error: error.message }
+  revalidatePath('/orders')
+  revalidatePath('/admin420/orders')
+  return {}
+}
+
+export async function restoreOrder(orderId: string): Promise<{ error?: string }> {
+  const supabase = await getSupabaseServerClient()
+  const { error } = await supabase
+    .from('orders')
+    .update({ deleted_at: null })
+    .eq('id', orderId)
+  if (error) return { error: error.message }
+  revalidatePath('/orders')
+  revalidatePath('/admin420/orders')
   return {}
 }
 

@@ -96,6 +96,7 @@ export interface Order {
   created_by: string | null
   created_at: string
   updated_at: string
+  deleted_at: string | null
   customer?: Customer
   order_items?: OrderItem[]
 }

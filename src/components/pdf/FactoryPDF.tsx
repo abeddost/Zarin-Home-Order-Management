@@ -1,43 +1,45 @@
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import { COMPANY_INFO } from '@/lib/constants'
+import { registerPDFFonts } from '@/lib/pdf/fonts'
 import type { Order } from '@/types'
 
+registerPDFFonts()
+
 const S = StyleSheet.create({
-  page: { flexDirection: 'column', backgroundColor: '#FFFFFF', padding: 24, fontSize: 9, fontFamily: 'Helvetica' },
+  page: { flexDirection: 'column', backgroundColor: '#FFFFFF', padding: 24, fontSize: 11, fontFamily: 'NotoSans' },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   companyBlock: { flexDirection: 'column', gap: 2 },
-  companyName: { fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
-  companyDetail: { fontSize: 8, color: '#78716c' },
+  companyName: { fontSize: 20, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917' },
   orderBlock: { flexDirection: 'column', alignItems: 'flex-end', gap: 2 },
-  orderNum: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
-  orderDate: { fontSize: 8, color: '#78716c' },
+  orderNum: { fontSize: 17, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917' },
+  orderDate: { fontSize: 10, color: '#78716c' },
   badge: { backgroundColor: '#fef3c7', borderRadius: 4, padding: '3 8', border: '1 solid #fde68a', alignSelf: 'flex-end' },
-  badgeText: { fontSize: 7, color: '#92400e', fontFamily: 'Helvetica-Bold' },
+  badgeText: { fontSize: 9, color: '#92400e', fontFamily: 'NotoSans', fontWeight: 'bold' },
   divider: { borderBottom: '1 solid #e7e5e4', marginBottom: 10 },
   // Items
   itemsSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   itemCard: { width: 165, flexDirection: 'column', borderRadius: 4, border: '1 solid #e7e5e4', overflow: 'hidden' },
   itemImage: { width: 165, height: 105, backgroundColor: '#f5f5f4', objectFit: 'cover' },
   itemBody: { padding: 7, flexDirection: 'column', gap: 3 },
-  itemModel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1c1917' },
-  itemCat: { fontSize: 7, color: '#78716c' },
+  itemModel: { fontSize: 13, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917' },
+  itemCat: { fontSize: 9, color: '#78716c' },
   itemRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
-  itemLabel: { fontSize: 7, color: '#a8a29e', fontFamily: 'Helvetica-Bold' },
-  itemValue: { fontSize: 8, color: '#44403c' },
+  itemLabel: { fontSize: 9, color: '#a8a29e', fontFamily: 'NotoSans', fontWeight: 'bold' },
+  itemValue: { fontSize: 10, color: '#44403c' },
   noteBox: { backgroundColor: '#fef3c7', borderRadius: 3, padding: 4, marginTop: 2 },
-  noteLabel: { fontSize: 7, color: '#92400e', fontFamily: 'Helvetica-Bold' },
-  noteText: { fontSize: 7, color: '#78350f' },
+  noteLabel: { fontSize: 9, color: '#92400e', fontFamily: 'NotoSans', fontWeight: 'bold' },
+  noteText: { fontSize: 9, color: '#78350f' },
   // Footer
   footer: { flexDirection: 'row', gap: 10, marginTop: 'auto' },
   footerCard: { flex: 1, padding: 10, backgroundColor: '#fafaf9', borderRadius: 4, border: '1 solid #e7e5e4', flexDirection: 'column', gap: 4 },
-  footerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#1c1917', marginBottom: 2 },
+  footerTitle: { fontSize: 11, fontFamily: 'NotoSans', fontWeight: 'bold', color: '#1c1917', marginBottom: 2 },
   footerRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  footerLabel: { fontSize: 8, color: '#78716c' },
-  footerValue: { fontSize: 8, color: '#1c1917', fontFamily: 'Helvetica-Bold' },
-  footerText: { fontSize: 8, color: '#44403c' },
+  footerLabel: { fontSize: 10, color: '#78716c' },
+  footerValue: { fontSize: 10, color: '#1c1917', fontFamily: 'NotoSans', fontWeight: 'bold' },
+  footerText: { fontSize: 10, color: '#44403c' },
   remainingRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4, borderTop: '1 solid #e7e5e4', marginTop: 2 },
-  remainingLabel: { fontSize: 9, color: '#78716c', fontFamily: 'Helvetica-Bold' },
-  remainingValue: { fontSize: 10, color: '#1c1917', fontFamily: 'Helvetica-Bold' },
+  remainingLabel: { fontSize: 11, color: '#78716c', fontFamily: 'NotoSans', fontWeight: 'bold' },
+  remainingValue: { fontSize: 12, color: '#1c1917', fontFamily: 'NotoSans', fontWeight: 'bold' },
 })
 
 function fmt(n: number) {
@@ -61,8 +63,6 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
         <View style={S.header}>
           <View style={S.companyBlock}>
             <Text style={S.companyName}>{COMPANY_INFO.name}</Text>
-            <Text style={S.companyDetail}>{COMPANY_INFO.address}, {COMPANY_INFO.city}</Text>
-            <Text style={S.companyDetail}>{COMPANY_INFO.phone}</Text>
           </View>
           <View style={S.orderBlock}>
             <View style={S.badge}>
@@ -83,7 +83,7 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
                 <Image src={item.image_url} style={S.itemImage} />
               ) : (
                 <View style={[S.itemImage, { alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ color: '#a8a29e', fontSize: 8 }}>No Image</Text>
+                  <Text style={{ color: '#a8a29e', fontSize: 10 }}>No Image</Text>
                 </View>
               )}
               <View style={S.itemBody}>
@@ -154,7 +154,7 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
               </>
             ) : null}
             {!order.expected_delivery_date && !order.delivery_address && !order.factory_notes ? (
-              <Text style={{ fontSize: 8, color: '#a8a29e' }}>—</Text>
+              <Text style={{ fontSize: 10, color: '#a8a29e' }}>—</Text>
             ) : null}
           </View>
 

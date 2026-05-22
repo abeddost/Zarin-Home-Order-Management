@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Trash2, ImageIcon } from 'lucide-react'
+import { Trash2, ImageIcon, Camera, Loader2 } from 'lucide-react'
 import { getProductImage, getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import { isSofaCategory } from '@/lib/utils'
 import { SOFA_CONFIGURATIONS } from '@/lib/constants'
 import { ProductPickerModal } from './ProductPickerModal'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import Image from 'next/image'
 import type { Product, OrderItemFormValues } from '@/types'
 
@@ -22,6 +24,8 @@ interface Props {
 
 export function OrderItemRow({ item, index, onChange, onRemove, products }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleProductSelect(product: Product) {
     onChange(index, 'product_id', product.id)
@@ -34,6 +38,27 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
     onChange(index, 'sofa_configuration', '')
   }
 
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `items/${Date.now()}.${ext}`
+      const { data, error } = await supabase.storage
+        .from('order-images')
+        .upload(path, file, { upsert: true })
+      if (error) { toast.error('Image upload failed: ' + error.message); return }
+      const { data: { publicUrl } } = supabase.storage.from('order-images').getPublicUrl(data.path)
+      onChange(index, 'image_url', publicUrl)
+      onChange(index, 'product_id', '')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   const product = products.find(p => p.id === item.product_id)
   const issofa = isSofaCategory(item.category)
   const imageUrl = item.image_url || (product ? getProductImage(product.model_name, product.default_image_url ?? undefined) : '')
@@ -42,7 +67,7 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
   return (
     <div className="border border-stone-200 rounded-xl p-4 space-y-3 bg-white">
       <div className="flex items-start gap-3">
-        {/* Product image + picker button */}
+        {/* Product image + picker/photo buttons */}
         <div className="flex flex-col items-center gap-1.5 shrink-0">
           <button
             onClick={() => setPickerOpen(true)}
@@ -66,7 +91,25 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
             )}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
           </button>
-          <span className="text-xs text-stone-400">click to select</span>
+
+          {/* Camera / photo upload button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-50"
+            title="Upload a photo"
+          >
+            {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+            <span>{uploading ? 'Uploading…' : 'Photo'}</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoSelect}
+          />
         </div>
 
         <div className="flex-1 grid grid-cols-2 gap-2">

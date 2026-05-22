@@ -27,6 +27,7 @@ export default function FactoryOrdersPage() {
       let query = supabase
         .from('orders')
         .select('id, order_number, order_date, order_status, factory_status, delivery_status, order_source, created_at, customer:customers(name, phone)')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(200)
 

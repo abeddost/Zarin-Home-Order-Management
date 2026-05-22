@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { updateOrderStatus, updateFactoryStatus, updateDeliveryStatus } from '@/actions/orders'
-import { ORDER_STATUSES, FACTORY_STATUSES, DELIVERY_STATUSES } from '@/lib/constants'
+import { ORDER_STATUSES, FACTORY_STATUS_OPTIONS, DELIVERY_STATUSES } from '@/lib/constants'
 import type { OrderStatus, FactoryStatus, DeliveryStatus } from '@/types'
 
 type StatusType = 'order' | 'factory' | 'delivery'
@@ -23,7 +23,7 @@ interface Props {
 
 const CONFIG: Record<StatusType, { title: string; options: { value: string; label: string }[] }> = {
   order:    { title: 'Update Order Status',    options: ORDER_STATUSES },
-  factory:  { title: 'Update Factory Status',  options: FACTORY_STATUSES },
+  factory:  { title: 'Update Factory Status',  options: FACTORY_STATUS_OPTIONS },
   delivery: { title: 'Update Delivery Status', options: DELIVERY_STATUSES },
 }
 

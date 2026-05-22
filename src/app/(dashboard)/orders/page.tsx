@@ -32,6 +32,7 @@ export default function OrdersPage() {
     const { data } = await supabase
       .from('orders')
       .select('id, order_number, order_date, total_price, down_payment, remaining_balance, payment_status, order_status, order_source, created_at, customer:customers(name, phone), payments(amount)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(200)
     setOrders((data as OrderWithPayments[]) ?? [])

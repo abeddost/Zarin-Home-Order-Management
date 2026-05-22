@@ -36,10 +36,13 @@ export const FACTORY_STATUSES: { value: FactoryStatus; label: string; color: str
 
 export const DELIVERY_STATUSES: { value: DeliveryStatus; label: string; color: string }[] = [
   { value: 'not_scheduled',    label: 'Not Scheduled',    color: 'bg-gray-100 text-gray-600' },
-  { value: 'scheduled',        label: 'Scheduled',        color: 'bg-blue-100 text-blue-700' },
   { value: 'out_for_delivery', label: 'Out for Delivery', color: 'bg-yellow-100 text-yellow-700' },
   { value: 'delivered',        label: 'Delivered',        color: 'bg-green-100 text-green-700' },
 ]
+
+export const FACTORY_STATUS_OPTIONS = FACTORY_STATUSES.filter(
+  s => ['accepted', 'in_production', 'finished'].includes(s.value)
+)
 
 export const PAYMENT_STATUSES: { value: PaymentStatus; label: string; color: string }[] = [
   { value: 'unpaid',         label: 'Unpaid',         color: 'bg-red-100 text-red-700' },

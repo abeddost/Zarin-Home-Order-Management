@@ -2,8 +2,7 @@
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { FACTORY_STATUSES, DELIVERY_STATUSES } from '@/lib/constants'
+import { FACTORY_STATUS_OPTIONS, DELIVERY_STATUSES } from '@/lib/constants'
 import type { FormState } from './index'
 
 interface Props {
@@ -40,7 +39,7 @@ export function Step4Tracking({ form, set }: Props) {
             value={form.factory_status}
             onChange={e => set('factory_status', e.target.value)}
           >
-            {FACTORY_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            {FACTORY_STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>
 
@@ -76,25 +75,6 @@ export function Step4Tracking({ form, set }: Props) {
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>Factory Notes</Label>
-        <Textarea
-          placeholder="Special instructions for the factory (will appear on PDF)"
-          value={form.factory_notes}
-          onChange={e => set('factory_notes', e.target.value)}
-          rows={2}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>Internal Notes</Label>
-        <Textarea
-          placeholder="Internal notes (not shown on factory PDF)"
-          value={form.internal_notes}
-          onChange={e => set('internal_notes', e.target.value)}
-          rows={2}
-        />
-      </div>
     </div>
   )
 }

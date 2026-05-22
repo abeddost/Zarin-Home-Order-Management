@@ -2,7 +2,6 @@
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { PAYMENT_METHODS } from '@/lib/constants'
 import { formatCurrency } from '@/lib/utils'
 import type { FormState } from './index'
@@ -77,15 +76,6 @@ export function Step3Payment({ form, set }: Props) {
         </select>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>Payment Notes</Label>
-        <Textarea
-          placeholder="e.g. Down payment received 03.05.2026 by cash"
-          value={form.payment_notes}
-          onChange={e => set('payment_notes', e.target.value)}
-          rows={2}
-        />
-      </div>
     </div>
   )
 }

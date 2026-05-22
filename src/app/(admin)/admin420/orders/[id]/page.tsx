@@ -2,11 +2,12 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, CreditCard, Factory, Truck, Package, Pencil } from 'lucide-react'
+import { ChevronLeft, CreditCard, Factory, Truck, Package, Pencil, AlertTriangle } from 'lucide-react'
 import { OrderStatusBadge, FactoryStatusBadge, DeliveryStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
 import { OrderTimeline } from '@/components/orders/OrderTimeline'
 import { OrderDetailActions } from '@/components/orders/OrderDetailActions'
 import { PaymentHistorySection } from '@/components/orders/PaymentHistorySection'
+import { RestoreOrderButton } from '@/components/orders/RestoreOrderButton'
 import { formatCurrency, formatDate, isSofaCategory } from '@/lib/utils'
 import { getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
 import type { Order, Payment, OrderStatusHistory } from '@/types'
@@ -18,7 +19,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   const supabase = await getSupabaseServerClient()
 
   const [orderResult, paymentsResult, historyResult] = await Promise.all([
-    supabase.from('orders').select('id, order_number, order_month, monthly_sequence, customer_id, order_date, total_price, down_payment, remaining_balance, payment_status, payment_method, payment_notes, order_status, factory_status, delivery_status, expected_delivery_date, delivery_address, internal_notes, factory_notes, pdf_url, order_source, created_by, created_at, updated_at, customer:customers(id, name, phone, email, address, city, postal_code, notes, created_at), order_items(id, order_id, product_id, model_name, category, sofa_configuration, color, quantity, image_url, unit_price, customization_note, created_at)').eq('id', id).single(),
+    supabase.from('orders').select('id, order_number, order_month, monthly_sequence, customer_id, order_date, total_price, down_payment, remaining_balance, payment_status, payment_method, payment_notes, order_status, factory_status, delivery_status, expected_delivery_date, delivery_address, internal_notes, factory_notes, pdf_url, order_source, created_by, created_at, updated_at, deleted_at, customer:customers(id, name, phone, email, address, city, postal_code, notes, created_at), order_items(id, order_id, product_id, model_name, category, sofa_configuration, color, quantity, image_url, unit_price, customization_note, created_at)').eq('id', id).single(),
     supabase.from('payments').select('id, order_id, amount, payment_method, payment_date, notes, created_at').eq('order_id', id).order('payment_date', { ascending: true }),
     supabase.from('order_status_history').select('id, order_id, old_status, new_status, field_changed, note, changed_by, created_at').eq('order_id', id).order('created_at', { ascending: true }),
   ])
@@ -43,13 +44,26 @@ export default async function AdminOrderDetailPage({ params }: Props) {
             <p className="text-stone-500 text-sm mt-1">Created {formatDate(order.created_at)} · Order date: {formatDate(order.order_date)}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href={`/admin420/orders/${order.id}/edit`} className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border border-stone-200 rounded-lg hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition-colors">
-              <Pencil className="w-3.5 h-3.5" /> Edit Order
-            </Link>
-            <OrderDetailActions order={order} trueRemaining={trueRemaining} showDelete showFactoryPDF />
+            {order.deleted_at ? (
+              <RestoreOrderButton orderId={order.id} />
+            ) : (
+              <>
+                <Link href={`/admin420/orders/${order.id}/edit`} className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border border-stone-200 rounded-lg hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition-colors">
+                  <Pencil className="w-3.5 h-3.5" /> Edit Order
+                </Link>
+                <OrderDetailActions order={order} trueRemaining={trueRemaining} showDelete showFactoryPDF />
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {order.deleted_at && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>This order has been deleted on {formatDate(order.deleted_at)}. Restore it to make it active again.</span>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2 bg-white border border-stone-100 rounded-xl px-4 py-2.5">
