@@ -10,8 +10,8 @@ export function registerPDFFonts() {
   Font.register({
     family: 'NotoSans',
     fonts: [
-      { src: path.join(fontsDir, 'NotoSans-Regular.ttf'), fontWeight: 'normal' },
-      { src: path.join(fontsDir, 'NotoSans-Bold.ttf'), fontWeight: 'bold' },
+      { src: path.join(fontsDir, 'NotoSans-Regular.woff'), fontWeight: 'normal' },
+      { src: path.join(fontsDir, 'NotoSans-Bold.woff'), fontWeight: 'bold' },
     ],
   })
 }
