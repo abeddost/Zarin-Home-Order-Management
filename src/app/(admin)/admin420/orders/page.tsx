@@ -56,6 +56,7 @@ export default function AdminOrdersPage() {
   const [visibleCount, setVisibleCount] = useState(50)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleteModal, setDeleteModal] = useState(false)
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
   const deferredSearch = useDeferredValue(search)
@@ -126,6 +127,17 @@ export default function AdminOrdersPage() {
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
+    })
+  }
+
+  async function handleSingleDelete() {
+    if (!singleDeleteId) return
+    startDeleteTransition(async () => {
+      const result = await bulkDeleteOrders([singleDeleteId])
+      if (result.error) { toast.error(result.error); return }
+      toast.success('Order deleted')
+      setSingleDeleteId(null)
+      await fetchOrders()
     })
   }
 
@@ -309,7 +321,16 @@ export default function AdminOrdersPage() {
                           <RotateCcw className="w-3.5 h-3.5" /> Restore
                         </button>
                       ) : (
-                        <Link href={`/admin420/orders/${order.id}`} className="text-stone-500 hover:text-stone-900 text-xs font-medium">View →</Link>
+                        <div className="flex items-center gap-3">
+                          <Link href={`/admin420/orders/${order.id}`} className="text-stone-500 hover:text-stone-900 text-xs font-medium">View →</Link>
+                          <button
+                            onClick={() => setSingleDeleteId(order.id)}
+                            className="text-red-400 hover:text-red-600 transition-colors"
+                            title="Delete order"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -327,6 +348,23 @@ export default function AdminOrdersPage() {
           </Button>
         </div>
       )}
+
+      {/* Single order delete confirmation dialog */}
+      <Dialog open={!!singleDeleteId} onOpenChange={open => { if (!open) setSingleDeleteId(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete this order?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-stone-500 mt-1">The order will be moved to the Deleted folder. You can restore it later.</p>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setSingleDeleteId(null)} disabled={isDeleting}>Cancel</Button>
+            <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={handleSingleDelete} disabled={isDeleting}>
+              {isDeleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk delete confirmation dialog */}
       <Dialog open={deleteModal} onOpenChange={setDeleteModal}>
