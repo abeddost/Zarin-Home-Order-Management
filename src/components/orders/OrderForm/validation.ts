@@ -24,9 +24,7 @@ export function getOrderFormStepErrors(form: FormState, step: number): string[] 
 
     validItems.forEach((item, index) => {
       const label = `Item ${index + 1}`
-      if (!item.product_id) errors.push(`${label}: select a product.`)
       if (!item.model_name.trim()) errors.push(`${label}: model name is required.`)
-      if (!item.category.trim()) errors.push(`${label}: category is required.`)
       if (item.quantity < 1) errors.push(`${label}: quantity must be at least 1.`)
       if (item.unit_price <= 0) errors.push(`${label}: price must be greater than 0.`)
       if (isSofaCategory(item.category) && !item.sofa_configuration.trim()) {
