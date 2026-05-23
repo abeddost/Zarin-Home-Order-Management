@@ -9,6 +9,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
   const access = getUserAccess(user)
+  if (access === 'admin') redirect('/admin420')
 
   return (
     <div className="min-h-screen bg-gray-50">
