@@ -95,7 +95,7 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
                   <Text style={S.itemLabel}>Menge / Qty:</Text>
                   <Text style={S.itemValue}>{item.quantity}</Text>
                   <Text style={[S.itemLabel, { marginLeft: 8 }]}>Preis:</Text>
-                  <Text style={S.itemValue}>{fmt(item.unit_price)}</Text>
+                  <Text style={S.itemValue}>{fmt(item.unit_price * item.quantity)}</Text>
                 </View>
                 {item.customization_note ? (
                   <View style={{ backgroundColor: '#fef3c7', borderRadius: 3, padding: 4, marginTop: 2 }}>
