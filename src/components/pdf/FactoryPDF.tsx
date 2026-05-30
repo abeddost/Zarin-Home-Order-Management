@@ -1,6 +1,7 @@
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import { COMPANY_INFO } from '@/lib/constants'
 import { registerPDFFonts } from '@/lib/pdf/fonts'
+import { arabicStyle } from '@/lib/pdf/smartText'
 import type { Order } from '@/types'
 
 registerPDFFonts()
@@ -87,18 +88,18 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
                 </View>
               )}
               <View style={S.itemBody}>
-                <Text style={S.itemModel}>{item.model_name}</Text>
+                <Text style={[S.itemModel, arabicStyle(item.model_name)]}>{item.model_name}</Text>
                 <Text style={S.itemCat}>{item.category}</Text>
                 {item.sofa_configuration ? (
                   <View style={S.itemRow}>
                     <Text style={S.itemLabel}>Config / Konfigürasyon:</Text>
-                    <Text style={S.itemValue}>{item.sofa_configuration}</Text>
+                    <Text style={[S.itemValue, arabicStyle(item.sofa_configuration)]}>{item.sofa_configuration}</Text>
                   </View>
                 ) : null}
                 {item.color ? (
                   <View style={S.itemRow}>
                     <Text style={S.itemLabel}>Color / Renk:</Text>
-                    <Text style={S.itemValue}>{item.color}</Text>
+                    <Text style={[S.itemValue, arabicStyle(item.color)]}>{item.color}</Text>
                   </View>
                 ) : null}
                 <View style={S.itemRow}>
@@ -108,7 +109,7 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
                 {item.customization_note ? (
                   <View style={S.noteBox}>
                     <Text style={S.noteLabel}>Note / Not:</Text>
-                    <Text style={S.noteText}>{item.customization_note}</Text>
+                    <Text style={[S.noteText, arabicStyle(item.customization_note)]}>{item.customization_note}</Text>
                   </View>
                 ) : null}
               </View>
@@ -125,9 +126,9 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
             <Text style={S.footerTitle}>Customer / Müşteri</Text>
             {customer ? (
               <>
-                <Text style={S.footerText}>{customer.name}</Text>
-                {customer.address ? <Text style={S.footerText}>{customer.address}</Text> : null}
-                {customer.city ? <Text style={S.footerText}>{customer.postal_code ?? ''} {customer.city}</Text> : null}
+                <Text style={[S.footerText, arabicStyle(customer.name)]}>{customer.name}</Text>
+                {customer.address ? <Text style={[S.footerText, arabicStyle(customer.address)]}>{customer.address}</Text> : null}
+                {customer.city ? <Text style={[S.footerText, arabicStyle(customer.city)]}>{customer.postal_code ?? ''} {customer.city}</Text> : null}
                 {customer.phone ? <Text style={S.footerText}>{customer.phone}</Text> : null}
               </>
             ) : (
@@ -145,12 +146,12 @@ export function FactoryPDF({ order, trueRemaining }: { order: Order; trueRemaini
               </View>
             ) : null}
             {order.delivery_address ? (
-              <Text style={S.footerText}>{order.delivery_address}</Text>
+              <Text style={[S.footerText, arabicStyle(order.delivery_address)]}>{order.delivery_address}</Text>
             ) : null}
             {order.factory_notes ? (
               <>
                 <Text style={[S.footerLabel, { marginTop: 4 }]}>Notes / Notlar:</Text>
-                <Text style={S.footerText}>{order.factory_notes}</Text>
+                <Text style={[S.footerText, arabicStyle(order.factory_notes)]}>{order.factory_notes}</Text>
               </>
             ) : null}
             {!order.expected_delivery_date && !order.delivery_address && !order.factory_notes ? (

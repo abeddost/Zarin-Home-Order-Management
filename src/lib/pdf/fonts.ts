@@ -10,8 +10,17 @@ export function registerPDFFonts() {
   Font.register({
     family: 'NotoSans',
     fonts: [
-      { src: path.join(fontsDir, 'NotoSans-Regular.woff'), fontWeight: 'normal' },
-      { src: path.join(fontsDir, 'NotoSans-Bold.woff'), fontWeight: 'bold' },
+      { src: path.join(fontsDir, 'NotoSans-Regular.ttf'), fontWeight: 'normal' },
+      { src: path.join(fontsDir, 'NotoSans-Bold.ttf'), fontWeight: 'bold' },
     ],
   })
+  Font.register({
+    family: 'NotoNaskhArabic',
+    fonts: [
+      { src: path.join(fontsDir, 'NotoNaskhArabic-Regular.ttf'), fontWeight: 'normal' },
+      { src: path.join(fontsDir, 'NotoNaskhArabic-Bold.ttf'), fontWeight: 'bold' },
+    ],
+  })
+  // Prevent the renderer from trying to hyphenate Arabic/Persian words
+  Font.registerHyphenationCallback((word) => [word])
 }

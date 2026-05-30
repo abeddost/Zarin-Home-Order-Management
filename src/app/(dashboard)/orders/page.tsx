@@ -4,10 +4,10 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { OrderStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
+import { DeliveryStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ORDER_STATUSES, PAYMENT_STATUSES } from '@/lib/constants'
-import { Plus, Search, ShoppingBag } from 'lucide-react'
+import { DELIVERY_STATUSES, PAYMENT_STATUSES } from '@/lib/constants'
+import { Check, Plus, Search, ShoppingBag, X } from 'lucide-react'
 import Link from 'next/link'
 import type { Order } from '@/types'
 
@@ -31,7 +31,7 @@ export default function OrdersPage() {
     const supabase = getSupabaseBrowserClient()
     const { data } = await supabase
       .from('orders')
-      .select('id, order_number, order_date, total_price, down_payment, remaining_balance, payment_status, order_status, order_source, created_at, customer:customers(name, phone), payments(amount)')
+      .select('id, order_number, order_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, customer:customers(name, phone), payments(amount)')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(200)
@@ -48,7 +48,7 @@ export default function OrdersPage() {
       o.order_number.toLowerCase().includes(deferredSearch.toLowerCase()) ||
       (o.customer?.name ?? '').toLowerCase().includes(deferredSearch.toLowerCase()) ||
       (o.customer?.phone ?? '').includes(deferredSearch)
-    const matchStatus = !statusFilter || o.order_status === statusFilter
+    const matchStatus = !statusFilter || o.delivery_status === statusFilter
     const matchPayment = !paymentFilter || o.payment_status === paymentFilter
     return matchSearch && matchStatus && matchPayment
   }), [orders, deferredSearch, statusFilter, paymentFilter])
@@ -85,8 +85,8 @@ export default function OrdersPage() {
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
-          <option value="">All Statuses</option>
-          {ORDER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          <option value="">All Deliveries</option>
+          {DELIVERY_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         <select
           className="h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-stone-300"
@@ -132,9 +132,11 @@ export default function OrdersPage() {
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Date</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Customer</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Total</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-500">Down Payment</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-500">DP Paid</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Remaining</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Source</th>
-                  <th className="text-left px-4 py-3 font-medium text-stone-500">Status</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-500">Delivery</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-500">Payment</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -146,6 +148,12 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 text-stone-600">{formatDate(order.order_date)}</td>
                     <td className="px-4 py-3 text-stone-800 font-medium">{order.customer?.name ?? '—'}</td>
                     <td className="px-4 py-3 font-medium text-stone-800">{formatCurrency(order.total_price)}</td>
+                    <td className="px-4 py-3 text-stone-600">{formatCurrency(order.down_payment)}</td>
+                    <td className="px-4 py-3">
+                      {order.payment_status !== 'unpaid'
+                        ? <Check className="w-4 h-4 text-green-500" />
+                        : <X className="w-4 h-4 text-red-400" />}
+                    </td>
                     <td className="px-4 py-3 text-stone-600">{formatCurrency(trueRemaining(order))}</td>
                     <td className="px-4 py-3">
                       {order.order_source ? (
@@ -154,7 +162,7 @@ export default function OrdersPage() {
                         </span>
                       ) : <span className="text-stone-300 text-xs">—</span>}
                     </td>
-                    <td className="px-4 py-3"><OrderStatusBadge status={order.order_status} /></td>
+                    <td className="px-4 py-3"><DeliveryStatusBadge status={order.delivery_status} /></td>
                     <td className="px-4 py-3"><PaymentStatusBadge status={order.payment_status} /></td>
                     <td className="px-4 py-3">
                       <Link href={`/orders/${order.id}`} className="text-stone-500 hover:text-stone-900 text-xs font-medium">
