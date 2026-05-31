@@ -86,12 +86,14 @@ export default function AdminOrdersPage() {
       supabase
         .from('orders')
         .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
+        .or('order_source.is.null,order_source.neq.showroom')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
         .from('orders')
         .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
+        .or('order_source.is.null,order_source.neq.showroom')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false })
         .limit(500),

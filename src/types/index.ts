@@ -39,7 +39,7 @@ export type PaymentStatus = 'unpaid' | 'partially_paid' | 'paid'
 
 export type PaymentMethod = 'cash' | 'bank_transfer' | 'installment' | 'other'
 
-export type OrderSource = 'depot' | 'turkey'
+export type OrderSource = 'depot' | 'turkey' | 'showroom'
 
 export interface Profile {
   id: string
@@ -112,6 +112,8 @@ export interface OrderItem {
   quantity: number
   image_url: string | null
   unit_price: number
+  product_cost?: number
+  logistics_cost?: number
   customization_note: string | null
   created_at: string
   product?: Product
@@ -149,7 +151,18 @@ export interface OrderItemFormValues {
   quantity: number
   image_url: string
   unit_price: number
+  product_cost: number
+  logistics_cost: number
   customization_note: string
+}
+
+export interface ShowroomNote {
+  id: string
+  title: string
+  content: string
+  created_by: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface OrderFormValues {

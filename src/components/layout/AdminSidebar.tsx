@@ -3,17 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, ShoppingBag, Users, Package, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Users, Package, LogOut, Menu, X, Store, StickyNote } from 'lucide-react'
 import { useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { href: '/admin420',           label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/admin420/orders',    label: 'Orders',     icon: ShoppingBag },
-  { href: '/admin420/customers', label: 'Customers',  icon: Users },
-  { href: '/admin420/products',  label: 'Products',   icon: Package },
+  { href: '/admin420',                   label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/admin420/orders',            label: 'Orders',        icon: ShoppingBag },
+  { href: '/admin420/show-room-orders',  label: 'Show-Room',     icon: Store },
+  { href: '/admin420/show-room-orders/notes', label: 'SR Notes', icon: StickyNote },
+  { href: '/admin420/customers',         label: 'Customers',     icon: Users },
+  { href: '/admin420/products',          label: 'Products',      icon: Package },
 ]
 
 export function AdminSidebar() {

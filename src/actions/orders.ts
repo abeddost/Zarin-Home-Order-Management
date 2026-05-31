@@ -91,6 +91,8 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId?: 
         quantity: item.quantity,
         image_url: item.image_url || null,
         unit_price: item.unit_price,
+        product_cost: item.product_cost ?? 0,
+        logistics_cost: item.logistics_cost ?? 0,
         customization_note: item.customization_note || null,
       }))
     )
@@ -324,6 +326,8 @@ export async function updateOrder(
         quantity: item.quantity,
         image_url: item.image_url || null,
         unit_price: item.unit_price,
+        product_cost: item.product_cost ?? 0,
+        logistics_cost: item.logistics_cost ?? 0,
         customization_note: item.customization_note || null,
       }))
     )
@@ -334,4 +338,77 @@ export async function updateOrder(
   revalidatePath(`/orders/${orderId}`)
 
   return {}
+}
+
+export interface CreateShowroomOrderInput {
+  order_date: string
+  items: OrderItemFormValues[]
+  total_price: number
+  factory_status: string
+  delivery_status: string
+  expected_delivery_date: string
+  internal_notes: string
+  factory_notes: string
+}
+
+export async function createShowroomOrder(input: CreateShowroomOrderInput): Promise<{ orderId?: string; orderNumber?: string; error?: string }> {
+  const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: numData, error: numError } = await supabase.rpc('generate_showroom_order_number')
+  if (numError || !numData?.[0]) return { error: numError?.message ?? 'Failed to generate showroom order number' }
+
+  const { order_number, order_month, monthly_sequence } = numData[0]
+
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      order_number,
+      order_month,
+      monthly_sequence,
+      customer_id: null,
+      order_date: input.order_date,
+      total_price: input.total_price,
+      down_payment: 0,
+      payment_method: null,
+      payment_notes: null,
+      factory_status: input.factory_status || 'not_sent',
+      delivery_status: input.delivery_status || 'not_scheduled',
+      expected_delivery_date: input.expected_delivery_date || null,
+      delivery_address: null,
+      internal_notes: input.internal_notes || null,
+      factory_notes: input.factory_notes || null,
+      order_source: 'showroom',
+      order_status: 'draft',
+      created_by: user.id,
+    })
+    .select()
+    .single()
+
+  if (orderError) return { error: orderError.message }
+
+  if (input.items.length > 0) {
+    const { error: itemsError } = await supabase.from('order_items').insert(
+      input.items.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id || null,
+        model_name: item.model_name,
+        category: item.category,
+        sofa_configuration: item.sofa_configuration || null,
+        color: item.color || null,
+        quantity: item.quantity,
+        image_url: item.image_url || null,
+        unit_price: 0,
+        product_cost: item.product_cost ?? 0,
+        logistics_cost: item.logistics_cost ?? 0,
+        customization_note: item.customization_note || null,
+      }))
+    )
+    if (itemsError) return { error: itemsError.message }
+  }
+
+  revalidatePath('/admin420/show-room-orders')
+
+  return { orderId: order.id, orderNumber: order_number }
 }

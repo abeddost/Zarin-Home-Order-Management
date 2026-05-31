@@ -17,7 +17,8 @@ import type { FormState } from './OrderForm/index'
 
 export const EMPTY_ITEM = (): OrderItemFormValues => ({
   product_id: '', model_name: '', category: '', sofa_configuration: '',
-  color: '', quantity: 1, image_url: '', unit_price: 0, customization_note: '',
+  color: '', quantity: 1, image_url: '', unit_price: 0,
+  product_cost: 0, logistics_cost: 0, customization_note: '',
 })
 
 const STEPS = ['Customer', 'Items', 'Payment', 'Tracking', 'Review']
@@ -48,6 +49,8 @@ function orderToFormState(order: Order): FormState {
       quantity: item.quantity,
       image_url: item.image_url ?? '',
       unit_price: item.unit_price,
+      product_cost: item.product_cost ?? 0,
+      logistics_cost: item.logistics_cost ?? 0,
       customization_note: item.customization_note ?? '',
     })),
     order_date: order.order_date,
