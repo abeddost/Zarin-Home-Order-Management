@@ -140,7 +140,10 @@ export async function updateDeliveryStatus(
   if (address !== undefined) payload.delivery_address = address || null
   const { error } = await supabase.from('orders').update(payload).eq('id', orderId)
   if (error) return { error: error.message }
+  revalidatePath('/orders')
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/admin420/orders')
+  revalidatePath(`/admin420/orders/${orderId}`)
   return {}
 }
 

@@ -5,14 +5,14 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { OrderStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
+import { DeliveryStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ORDER_STATUSES, PAYMENT_STATUSES } from '@/lib/constants'
+import { DELIVERY_STATUSES, PAYMENT_STATUSES } from '@/lib/constants'
 import { Plus, Search, ShoppingBag, Download, Trash2, RotateCcw, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { restoreOrder, bulkDeleteOrders } from '@/actions/orders'
+import { restoreOrder, bulkDeleteOrders, updateDeliveryStatus } from '@/actions/orders'
 import { toast } from 'sonner'
-import type { Order } from '@/types'
+import type { DeliveryStatus, Order } from '@/types'
 
 type OrderWithPayments = Order & { payments: { amount: number }[] }
 
@@ -57,6 +57,7 @@ export default function AdminOrdersPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleteModal, setDeleteModal] = useState(false)
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null)
+  const [updatingDeliveryId, setUpdatingDeliveryId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
   const deferredSearch = useDeferredValue(search)
@@ -66,13 +67,13 @@ export default function AdminOrdersPage() {
     const [activeRes, deletedRes] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
+        .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
         .from('orders')
-        .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
+        .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false })
         .limit(500),
@@ -96,7 +97,7 @@ export default function AdminOrdersPage() {
       o.order_number.toLowerCase().includes(deferredSearch.toLowerCase()) ||
       (o.customer?.name ?? '').toLowerCase().includes(deferredSearch.toLowerCase()) ||
       (o.customer?.phone ?? '').includes(deferredSearch)
-    const matchStatus = !statusFilter || o.order_status === statusFilter
+    const matchStatus = !statusFilter || o.delivery_status === statusFilter
     const matchPayment = !paymentFilter || o.payment_status === paymentFilter
     return matchSearch && matchStatus && matchPayment
   }), [sourceList, deferredSearch, statusFilter, paymentFilter])
@@ -128,6 +129,23 @@ export default function AdminOrdersPage() {
       else next.add(id)
       return next
     })
+  }
+
+  async function handleDeliveryStatusChange(orderId: string, status: DeliveryStatus) {
+    const order = orders.find(o => o.id === orderId)
+    if (!order || order.delivery_status === status) return
+
+    setUpdatingDeliveryId(orderId)
+    const result = await updateDeliveryStatus(orderId, status)
+    setUpdatingDeliveryId(null)
+
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, delivery_status: status } : o))
+    toast.success('Delivery status updated')
   }
 
   async function handleSingleDelete() {
@@ -206,7 +224,7 @@ export default function AdminOrdersPage() {
         </div>
         <select className="h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-stone-300" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>
-          {ORDER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          {DELIVERY_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         <select className="h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-stone-300" value={paymentFilter} onChange={e => setPaymentFilter(e.target.value)}>
           <option value="">All Payments</option>
@@ -309,7 +327,23 @@ export default function AdminOrdersPage() {
                         </span>
                       ) : <span className="text-stone-300 text-xs">—</span>}
                     </td>
-                    <td className="px-4 py-3"><OrderStatusBadge status={order.order_status} /></td>
+                    <td className="px-4 py-3">
+                      {activeTab === 'deleted' ? (
+                        <DeliveryStatusBadge status={order.delivery_status ?? 'not_scheduled'} />
+                      ) : (
+                        <select
+                          className="h-8 min-w-36 rounded-lg border border-stone-200 bg-white px-2 text-xs font-medium text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          value={order.delivery_status ?? 'not_scheduled'}
+                          onChange={e => handleDeliveryStatusChange(order.id, e.target.value as DeliveryStatus)}
+                          disabled={updatingDeliveryId === order.id}
+                          aria-label={`Delivery status for order ${order.order_number}`}
+                        >
+                          {DELIVERY_STATUSES.map(s => (
+                            <option key={s.value} value={s.value}>{s.label}</option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
                     <td className="px-4 py-3"><PaymentStatusBadge status={order.payment_status} /></td>
                     <td className="px-4 py-3">
                       {activeTab === 'deleted' ? (
