@@ -135,7 +135,7 @@ export default function ShowroomNotesPage() {
                   </div>
                   <button
                     onClick={e => { e.stopPropagation(); handleDelete(note) }}
-                    className="p-1 rounded text-stone-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-colors shrink-0"
+                    className="p-1 rounded text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                     title="Delete note"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -166,9 +166,18 @@ export default function ShowroomNotesPage() {
                 value={title}
                 onChange={e => handleTitleChange(e.target.value)}
               />
-              <span className={`text-xs ${saving ? 'text-stone-400' : 'text-stone-300'} ml-4 shrink-0`}>
-                {saving ? 'Saving…' : 'Saved'}
-              </span>
+              <div className="flex items-center gap-3 ml-4 shrink-0">
+                <span className={`text-xs ${saving ? 'text-stone-400' : 'text-stone-300'}`}>
+                  {saving ? 'Saving…' : 'Saved'}
+                </span>
+                <button
+                  onClick={() => activeNote && handleDelete(activeNote)}
+                  className="p-1.5 rounded text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Delete note"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <textarea
               className="flex-1 px-8 py-6 text-stone-700 text-sm leading-relaxed bg-stone-50 resize-none focus:outline-none"
