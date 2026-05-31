@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DeliveryStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { DELIVERY_STATUSES, PAYMENT_STATUSES } from '@/lib/constants'
 import { Plus, Search, ShoppingBag, Download, Trash2, RotateCcw, Loader2 } from 'lucide-react'
 import Link from 'next/link'
@@ -19,6 +19,24 @@ type OrderWithPayments = Order & { payments: { amount: number }[] }
 function trueRemaining(order: OrderWithPayments): number {
   const paidSum = order.payments.reduce((s, p) => s + p.amount, 0)
   return Math.max(0, order.remaining_balance - paidSum)
+}
+
+function deliveryStatusSelectClass(status: DeliveryStatus | null | undefined): string {
+  return cn(
+    'h-8 min-w-36 rounded-lg border px-2 text-xs font-medium focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60',
+    status === 'delivered'
+      ? 'border-green-200 bg-green-100 text-green-700 focus:ring-green-200'
+      : 'border-stone-200 bg-white text-stone-700 focus:ring-stone-300'
+  )
+}
+
+function sourceBadgeClass(source: Order['order_source']): string {
+  return cn(
+    'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+    source === 'turkey'
+      ? 'bg-orange-100 text-orange-700'
+      : 'bg-blue-100 text-blue-700'
+  )
 }
 
 function exportCSV(orders: OrderWithPayments[]) {
@@ -322,7 +340,7 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-3 text-stone-600">{formatCurrency(trueRemaining(order))}</td>
                     <td className="px-4 py-3">
                       {order.order_source ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-600">
+                        <span className={sourceBadgeClass(order.order_source)}>
                           {order.order_source === 'turkey' ? 'Turkey' : 'Depot'}
                         </span>
                       ) : <span className="text-stone-300 text-xs">—</span>}
@@ -332,7 +350,7 @@ export default function AdminOrdersPage() {
                         <DeliveryStatusBadge status={order.delivery_status ?? 'not_scheduled'} />
                       ) : (
                         <select
-                          className="h-8 min-w-36 rounded-lg border border-stone-200 bg-white px-2 text-xs font-medium text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className={deliveryStatusSelectClass(order.delivery_status)}
                           value={order.delivery_status ?? 'not_scheduled'}
                           onChange={e => handleDeliveryStatusChange(order.id, e.target.value as DeliveryStatus)}
                           disabled={updatingDeliveryId === order.id}
