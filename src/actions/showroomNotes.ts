@@ -35,6 +35,28 @@ export async function updateNote(id: string, title: string, content: string): Pr
 
 export async function deleteNote(id: string): Promise<{ error?: string }> {
   const supabase = await getSupabaseServerClient()
+  const { error } = await supabase
+    .from('showroom_notes')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath(PATH)
+  return {}
+}
+
+export async function restoreNote(id: string): Promise<{ error?: string }> {
+  const supabase = await getSupabaseServerClient()
+  const { error } = await supabase
+    .from('showroom_notes')
+    .update({ deleted_at: null })
+    .eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath(PATH)
+  return {}
+}
+
+export async function permanentlyDeleteNote(id: string): Promise<{ error?: string }> {
+  const supabase = await getSupabaseServerClient()
   const { error } = await supabase.from('showroom_notes').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath(PATH)
