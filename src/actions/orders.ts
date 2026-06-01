@@ -356,7 +356,8 @@ export async function createShowroomOrder(input: CreateShowroomOrderInput): Prom
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: numData, error: numError } = await supabase.rpc('generate_showroom_order_number')
+  const { data: numData, error: numError } = await supabase
+    .rpc('generate_order_number', { p_order_date: input.order_date })
   if (numError || !numData?.[0]) return { error: numError?.message ?? 'Failed to generate showroom order number' }
 
   const { order_number, order_month, monthly_sequence } = numData[0]
