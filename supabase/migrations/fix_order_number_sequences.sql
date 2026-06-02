@@ -62,13 +62,20 @@ end;
 $function$;
 
 -- Fix 3: Backfill existing data
--- Step 3a: Fix showroom orders that have order_month = 'showroom' (literal string).
+
+-- Step 3a: Drop the unique constraint on (order_month, monthly_sequence).
+-- That constraint assumed a single sequence pool per month, but now customer
+-- and showroom orders each have their own independent counters starting from 1.
+-- The order_number column (e.g. '06-01' vs 'SR-06-01') is already distinct.
+ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_order_month_monthly_sequence_key;
+
+-- Step 3b: Fix showroom orders that have order_month = 'showroom' (literal string).
 --          Set the real month from their order_date.
 UPDATE public.orders
 SET order_month = to_char(order_date::date, 'MM-YYYY')
 WHERE order_source = 'showroom';
 
--- Step 3b: Re-sequence showroom orders per month with SR-MM-seq format.
+-- Step 3c: Re-sequence showroom orders per month with SR-MM-seq format.
 WITH ranked AS (
   SELECT
     id,
@@ -84,7 +91,7 @@ SET
 FROM ranked r
 WHERE o.id = r.id;
 
--- Step 3c: Re-sequence customer orders per month to close any gaps caused by
+-- Step 3d: Re-sequence customer orders per month to close any gaps caused by
 --          showroom orders that previously shared the same counter.
 WITH ranked AS (
   SELECT
