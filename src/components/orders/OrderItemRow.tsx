@@ -9,7 +9,7 @@ import { getProductImage, getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib
 import { isSofaCategory } from '@/lib/utils'
 import { SOFA_CONFIGURATIONS } from '@/lib/constants'
 import { ProductPickerModal } from './ProductPickerModal'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { uploadOptimizedOrderPhoto } from '@/lib/orderPhotoUpload'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import type { Product, OrderItemFormValues } from '@/types'
@@ -25,7 +25,8 @@ interface Props {
 export function OrderItemRow({ item, index, onChange, onRemove, products }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   function handleProductSelect(product: Product) {
     onChange(index, 'product_id', product.id)
@@ -43,19 +44,15 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
     if (!file) return
     setUploading(true)
     try {
-      const supabase = getSupabaseBrowserClient()
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `items/${Date.now()}.${ext}`
-      const { data, error } = await supabase.storage
-        .from('order-images')
-        .upload(path, file, { upsert: true })
-      if (error) { toast.error('Image upload failed: ' + error.message); return }
-      const { data: { publicUrl } } = supabase.storage.from('order-images').getPublicUrl(data.path)
+      const publicUrl = await uploadOptimizedOrderPhoto(file)
       onChange(index, 'image_url', publicUrl)
       onChange(index, 'product_id', '')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Image upload failed')
     } finally {
       setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (cameraInputRef.current) cameraInputRef.current.value = ''
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
     }
   }
 
@@ -92,19 +89,38 @@ export function OrderItemRow({ item, index, onChange, onRemove, products }: Prop
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
           </button>
 
-          {/* Camera / photo upload button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-50"
-            title="Upload a photo"
-          >
-            {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
-            <span>{uploading ? 'Uploading…' : 'Photo'}</span>
-          </button>
+          <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-50"
+              title="Take a photo"
+            >
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+              <span>{uploading ? 'Uploading...' : 'Camera'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-50"
+              title="Choose from gallery"
+            >
+              <ImageIcon className="w-3 h-3" />
+              <span>Gallery</span>
+            </button>
+          </div>
           <input
-            ref={fileInputRef}
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoSelect}
+          />
+          <input
+            ref={galleryInputRef}
             type="file"
             accept="image/*"
             className="hidden"
