@@ -67,6 +67,7 @@ export default function ShowRoomOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [monthFilter, setMonthFilter] = useState('')
   const [visibleCount, setVisibleCount] = useState(50)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleteModal, setDeleteModal] = useState(false)
@@ -81,14 +82,14 @@ export default function ShowRoomOrdersPage() {
     const [activeRes, deletedRes] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, order_number, order_date, expected_delivery_date, order_status, delivery_status, factory_status, order_source, internal_notes, created_at, deleted_at, order_items(id, order_id, model_name, category, color, quantity, image_url, product_cost, logistics_cost, unit_price, sofa_configuration, customization_note, product_id, created_at), payments(amount)')
+        .select('id, order_number, order_month, order_date, expected_delivery_date, order_status, delivery_status, factory_status, order_source, internal_notes, created_at, deleted_at, order_items(id, order_id, model_name, category, color, quantity, image_url, product_cost, logistics_cost, unit_price, sofa_configuration, customization_note, product_id, created_at), payments(amount)')
         .eq('order_source', 'showroom')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
         .from('orders')
-        .select('id, order_number, order_date, expected_delivery_date, order_status, delivery_status, factory_status, order_source, internal_notes, created_at, deleted_at, order_items(id, order_id, model_name, category, color, quantity, image_url, product_cost, logistics_cost, unit_price, sofa_configuration, customization_note, product_id, created_at), payments(amount)')
+        .select('id, order_number, order_month, order_date, expected_delivery_date, order_status, delivery_status, factory_status, order_source, internal_notes, created_at, deleted_at, order_items(id, order_id, model_name, category, color, quantity, image_url, product_cost, logistics_cost, unit_price, sofa_configuration, customization_note, product_id, created_at), payments(amount)')
         .eq('order_source', 'showroom')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false })
@@ -104,15 +105,26 @@ export default function ShowRoomOrdersPage() {
   useEffect(() => {
     setVisibleCount(50)
     setSelected(new Set())
-  }, [deferredSearch, statusFilter, activeTab])
+  }, [deferredSearch, statusFilter, monthFilter, activeTab])
 
   const sourceList = activeTab === 'deleted' ? deletedOrders : orders
+
+  const availableMonths = useMemo(() => {
+    const all = [...orders, ...deletedOrders]
+    return [...new Set(all.map(o => o.order_month).filter(Boolean))].sort().reverse()
+  }, [orders, deletedOrders])
+
+  function formatMonthLabel(orderMonth: string): string {
+    const [mm, yyyy] = orderMonth.split('-')
+    return new Date(`${yyyy}-${mm}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
 
   const filtered = useMemo(() => sourceList.filter(o => {
     const matchSearch = !deferredSearch || o.order_number.toLowerCase().includes(deferredSearch.toLowerCase())
     const matchStatus = !statusFilter || o.delivery_status === statusFilter
-    return matchSearch && matchStatus
-  }), [sourceList, deferredSearch, statusFilter])
+    const matchMonth = !monthFilter || o.order_month === monthFilter
+    return matchSearch && matchStatus && matchMonth
+  }), [sourceList, deferredSearch, statusFilter, monthFilter])
 
   const visibleOrders = filtered.slice(0, visibleCount)
   const allVisibleSelected = visibleOrders.length > 0 && visibleOrders.every(o => selected.has(o.id))
@@ -217,6 +229,10 @@ export default function ShowRoomOrdersPage() {
           <option value="">All Statuses</option>
           {DELIVERY_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
+        <select className="h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-stone-300" value={monthFilter} onChange={e => setMonthFilter(e.target.value)}>
+          <option value="">All Months</option>
+          {availableMonths.map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
+        </select>
       </div>
 
       {/* Bulk action bar */}
@@ -288,7 +304,7 @@ export default function ShowRoomOrdersPage() {
                           <input type="checkbox" checked={selected.has(order.id)} onChange={() => toggleSelect(order.id)} className="rounded border-stone-300 accent-stone-800" />
                         </td>
                       )}
-                      <td className="px-4 py-3 font-mono font-semibold text-stone-800">#{order.order_number}</td>
+                      <td className="px-4 py-3 font-mono font-semibold text-stone-800">{order.order_number}</td>
                       <td className="px-4 py-3 text-stone-600">{formatDate(order.order_date)}</td>
                       <td className="px-4 py-3 text-stone-700 max-w-48">
                         <span className="truncate block">{itemSummary}{extra}</span>

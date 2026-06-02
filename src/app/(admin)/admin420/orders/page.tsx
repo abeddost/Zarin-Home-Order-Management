@@ -71,6 +71,7 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [paymentFilter, setPaymentFilter] = useState('')
+  const [monthFilter, setMonthFilter] = useState('')
   const [visibleCount, setVisibleCount] = useState(50)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleteModal, setDeleteModal] = useState(false)
@@ -85,14 +86,14 @@ export default function AdminOrdersPage() {
     const [activeRes, deletedRes] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
+        .select('id, order_number, order_month, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
         .or('order_source.is.null,order_source.neq.showroom')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
         .from('orders')
-        .select('id, order_number, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
+        .select('id, order_number, order_month, order_date, expected_delivery_date, total_price, down_payment, remaining_balance, payment_status, order_status, delivery_status, order_source, created_at, deleted_at, customer:customers(name, phone, address), payments(amount)')
         .or('order_source.is.null,order_source.neq.showroom')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false })
@@ -108,9 +109,19 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     setVisibleCount(50)
     setSelected(new Set())
-  }, [deferredSearch, statusFilter, paymentFilter, activeTab])
+  }, [deferredSearch, statusFilter, paymentFilter, monthFilter, activeTab])
 
   const sourceList = activeTab === 'deleted' ? deletedOrders : orders
+
+  const availableMonths = useMemo(() => {
+    const all = [...orders, ...deletedOrders]
+    return [...new Set(all.map(o => o.order_month).filter(Boolean))].sort().reverse()
+  }, [orders, deletedOrders])
+
+  function formatMonthLabel(orderMonth: string): string {
+    const [mm, yyyy] = orderMonth.split('-')
+    return new Date(`${yyyy}-${mm}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
 
   const filtered = useMemo(() => sourceList.filter(o => {
     const matchSearch = !deferredSearch ||
@@ -119,8 +130,9 @@ export default function AdminOrdersPage() {
       (o.customer?.phone ?? '').includes(deferredSearch)
     const matchStatus = !statusFilter || o.delivery_status === statusFilter
     const matchPayment = !paymentFilter || o.payment_status === paymentFilter
-    return matchSearch && matchStatus && matchPayment
-  }), [sourceList, deferredSearch, statusFilter, paymentFilter])
+    const matchMonth = !monthFilter || o.order_month === monthFilter
+    return matchSearch && matchStatus && matchPayment && matchMonth
+  }), [sourceList, deferredSearch, statusFilter, paymentFilter, monthFilter])
 
   const visibleOrders = filtered.slice(0, visibleCount)
 
@@ -249,6 +261,10 @@ export default function AdminOrdersPage() {
         <select className="h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-stone-300" value={paymentFilter} onChange={e => setPaymentFilter(e.target.value)}>
           <option value="">All Payments</option>
           {PAYMENT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select className="h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-stone-300" value={monthFilter} onChange={e => setMonthFilter(e.target.value)}>
+          <option value="">All Months</option>
+          {availableMonths.map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
         </select>
       </div>
 
