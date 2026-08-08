@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Trash2, ImageIcon, Camera, Loader2 } from 'lucide-react'
 import { getProductImage, getProductThumbnail, PRODUCT_IMAGE_SIZES } from '@/lib/productImages'
-import { isSofaCategory, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { SOFA_CONFIGURATIONS } from '@/lib/constants'
 import { ProductPickerModal } from '@/components/orders/ProductPickerModal'
 import { uploadOptimizedOrderPhoto } from '@/lib/orderPhotoUpload'
@@ -66,7 +66,6 @@ function ShowroomItemRow({
   }
 
   const product = products.find(p => p.id === item.product_id)
-  const issofa = isSofaCategory(item.category)
   const imageUrl = item.image_url || (product ? getProductImage(product.model_name, product.default_image_url ?? undefined) : '')
   const thumbnailUrl = imageUrl ? getProductThumbnail(item.model_name || product?.model_name || '', imageUrl, { width: 160, height: 160 }) : ''
   const itemTotal = (item.product_cost + item.logistics_cost) * item.quantity
@@ -152,18 +151,16 @@ function ShowroomItemRow({
             className="text-stone-500"
           />
 
-          {issofa && (
-            <div className="col-span-2">
-              <select
-                className="w-full h-9 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
-                value={item.sofa_configuration}
-                onChange={e => onChange(index, 'sofa_configuration', e.target.value)}
-              >
-                <option value="">— Sofa Configuration —</option>
-                {SOFA_CONFIGURATIONS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          )}
+          <div className="col-span-2">
+            <select
+              className="w-full h-9 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
+              value={item.sofa_configuration}
+              onChange={e => onChange(index, 'sofa_configuration', e.target.value)}
+            >
+              <option value="">— Sofa Configuration —</option>
+              {SOFA_CONFIGURATIONS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
 
           <Input
             type="number"

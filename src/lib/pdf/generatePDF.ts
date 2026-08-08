@@ -13,7 +13,7 @@ function pdfSafeImageUrl(item: OrderItem): string | null {
   return mapped && !mapped.toLowerCase().endsWith('.webp') ? mapped : null
 }
 
-export async function generateCustomerPDF(orderId: string): Promise<{ base64?: string; filename?: string; error?: string }> {
+export async function generateCustomerPDF(orderId: string, showPrices: boolean = true): Promise<{ base64?: string; filename?: string; error?: string }> {
   const supabase = await getSupabaseServerClient()
 
   const [orderResult, paymentsResult] = await Promise.all([
@@ -48,7 +48,7 @@ export async function generateCustomerPDF(orderId: string): Promise<{ base64?: s
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buffer = await renderToBuffer(createElement(OrderPDF, { order: orderForPDF, trueRemaining, payments }) as any)
+  const buffer = await renderToBuffer(createElement(OrderPDF, { order: orderForPDF, trueRemaining, payments, showPrices }) as any)
 
   const safeName = order.customer?.name?.replace(/[^a-zA-Z0-9À-ž]/g, '-').replace(/-+/g, '-') ?? 'Kunde'
   const filename = `Order-${order.order_number}-${safeName}.pdf`

@@ -41,6 +41,7 @@ export function OrderDetailActions({
   const [statusModal, setStatusModal] = useState<'order' | 'factory' | 'delivery' | null>(null)
   const [paymentModal, setPaymentModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
+  const [showPrices, setShowPrices] = useState(true)
   const [isPdfPending, startPdfTransition] = useTransition()
   const [isFactoryPdfPending, startFactoryPdfTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
@@ -48,7 +49,7 @@ export function OrderDetailActions({
   function handleCustomerPdf() {
     startPdfTransition(async () => {
       toast.loading('Generating Customer PDF...')
-      const result = await generateCustomerPDF(order.id)
+      const result = await generateCustomerPDF(order.id, showPrices)
       toast.dismiss()
       if (result.error) { toast.error(result.error); return }
       openBase64PDF(result.base64!, result.filename!)
@@ -91,6 +92,16 @@ export function OrderDetailActions({
         <Button variant="outline" size="sm" onClick={() => setPaymentModal(true)}>
           <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Add Payment
         </Button>
+
+        <label className="flex items-center gap-1.5 text-xs text-stone-500 select-none">
+          <input
+            type="checkbox"
+            checked={showPrices}
+            onChange={e => setShowPrices(e.target.checked)}
+            className="rounded border-stone-300 accent-stone-800"
+          />
+          Show product prices
+        </label>
 
         <Button
           size="sm"

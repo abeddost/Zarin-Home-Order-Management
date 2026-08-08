@@ -45,7 +45,7 @@ function fmtDate(s: string | null | undefined) {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-export function OrderPDF({ order, trueRemaining, payments }: { order: Order; trueRemaining?: number; payments?: Payment[] }) {
+export function OrderPDF({ order, trueRemaining, payments, showPrices = true }: { order: Order; trueRemaining?: number; payments?: Payment[]; showPrices?: boolean }) {
   const items = order.order_items ?? []
   const customer = order.customer
 
@@ -95,8 +95,12 @@ export function OrderPDF({ order, trueRemaining, payments }: { order: Order; tru
                 <View style={S.itemRow}>
                   <Text style={S.itemLabel}>Menge / Qty:</Text>
                   <Text style={S.itemValue}>{item.quantity}</Text>
-                  <Text style={[S.itemLabel, { marginLeft: 8 }]}>Preis:</Text>
-                  <Text style={S.itemValue}>{fmt(item.unit_price * item.quantity)}</Text>
+                  {showPrices ? (
+                    <>
+                      <Text style={[S.itemLabel, { marginLeft: 8 }]}>Preis:</Text>
+                      <Text style={S.itemValue}>{fmt(item.unit_price * item.quantity)}</Text>
+                    </>
+                  ) : null}
                 </View>
                 {item.customization_note ? (
                   <View style={{ backgroundColor: '#fef3c7', borderRadius: 3, padding: 4, marginTop: 2 }}>
